@@ -5,11 +5,11 @@ VisualStudioVersion = 16.0.31424.327
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IoTAS.Server", "IoTAS\Server\IoTAS.Server.csproj", "{A45E7E94-B592-4039-8C8F-A43DD93A9AD7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IoTAS.Client", "IoTAS\Client\IoTAS.Client.csproj", "{6453BB81-89D1-40A6-A6B6-84EFCB2BA437}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IoTAS.Monitor", "IoTAS\Client\IoTAS.Monitor.csproj", "{6453BB81-89D1-40A6-A6B6-84EFCB2BA437}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IoTAS.Shared", "IoTAS\Shared\IoTAS.Shared.csproj", "{4E133DC8-8581-459C-8700-A2F0E301D38F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IoTAS.Device", "Device\IoTAS.Device.csproj", "{700F4A4A-4B87-4E73-A2B6-39F661A9FCFC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IoTAS.Device", "Device\IoTAS.Device.csproj", "{700F4A4A-4B87-4E73-A2B6-39F661A9FCFC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
