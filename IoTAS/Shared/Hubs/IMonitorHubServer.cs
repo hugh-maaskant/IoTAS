@@ -7,8 +7,7 @@ using System.Threading.Tasks;
 namespace IoTAS.Shared.Hubs
 {
     /// <summary>
-    /// Monitor Attributes that can optionally be passed to the Server
-    /// during Monitor Registration.
+    /// Monitor Attributes that are passed to the Server during Registration.
     /// </summary>
     /// <remarks>
     /// This struct provides options to extend the 
@@ -16,7 +15,7 @@ namespace IoTAS.Shared.Hubs
     /// without being a breaking change on the interface itself (as long as
     /// the server can deal with any of its historic variants.    /// 
     /// </remarks>
-    public record MonitorRegistrationInDTO : IHubInDTO
+    public record MonitorRegistrationInDTO : IHubEvent
     {
         // empty at this time
     }
@@ -24,6 +23,17 @@ namespace IoTAS.Shared.Hubs
     /// <summary>
     /// Hub Interface provided by The server side to the Monitor Clients
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The parameters for the Hub methods are encapsulated in a operation
+    /// specific record type so that the interface can relatively easily
+    /// be extended.
+    /// </para>
+    /// The real calling code can not be implemented with this interface as
+    /// there currently is no method to generate Hub stubs and proxies 
+    /// automatically from an interface definition. 
+    /// But this still aids in documentation.
+    /// </remarks>
     public interface IMonitorHubServer
     {
         /// <summary>
@@ -35,7 +45,6 @@ namespace IoTAS.Shared.Hubs
         /// Register a Monitor in the Server.
         /// </summary>
         /// <param name="monitorRegistrationAttributes"></param>
-        /// <param name="deviceAttributes">Optional device attributes</param>
         /// <returns>A Task</returns>
         Task RegisterMonitor(MonitorRegistrationInDTO monitorRegistrationAttributes);
 

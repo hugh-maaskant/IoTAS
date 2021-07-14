@@ -9,6 +9,8 @@ using System.Linq;
 
 using Serilog;
 
+using IoTAS.Shared.Hubs;
+
 namespace IoTAS.Server
 {
     public class Startup
@@ -27,6 +29,7 @@ namespace IoTAS.Server
 
             services.AddControllersWithViews();
             services.AddRazorPages();
+            services.AddSignalR();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -58,6 +61,7 @@ namespace IoTAS.Server
             {
                 endpoints.MapRazorPages();
                 endpoints.MapControllers();
+                endpoints.MapHub<Hubs.DeviceHub>(IDeviceHubServer.path);
                 endpoints.MapFallbackToFile("index.html");
             });
         }

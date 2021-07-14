@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace IoTAS.Shared.Hubs
 {
@@ -6,30 +7,29 @@ namespace IoTAS.Shared.Hubs
     /// Device Attributes that need to be passed to the Server
     /// during Device Registration.
     /// </summary>
-    public record DeviceRegistrationInDTO : IHubInDTO
-    {
-        int deviceId;       // The Id ofthe Device to register in the IoTAS Server
-    }
+    public record DeviceRegistrationInDTO(int DeviceId) : IHubEvent;
+    
 
     /// <summary>
     /// Device Attributes that need to be passed to the Server
     /// for a Heartbeat message
     /// </summary>
-    public record DeviceHeartbeatInDTO : IHubInDTO
-    {
-        int deviceId;       // The Id ofthe Device that sent the heartbeat
-    }
+    public record DeviceHeartbeatInDTO(int DeviceId) : IHubEvent;
 
 
     /// <summary>
     /// Hub Interface provided by The server side to the Device Clients
     /// </summary>
+    /// <remarks>
+    /// The parameters for the Hub methods are encapsulated in a operation
+    /// specific record type so that the interface can be extended
+    /// </remarks>
     public interface IDeviceHubServer
     {
         /// <summary>
         /// The local path to the DeviceHub on the IoTAS Server 
         /// </summary>
-        public const string deviceHubPath = "/device";
+        public const string path = "/device";
 
         /// <summary>
         /// Register a Device in the Server.

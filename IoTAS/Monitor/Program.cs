@@ -8,7 +8,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IoTAS.Client
+namespace IoTAS.Monitor
 {
     public class Program
     {
@@ -16,6 +16,8 @@ namespace IoTAS.Client
         {
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
             builder.RootComponents.Add<App>("#app");
+
+            Console.WriteLine($"Baseaddress is {builder.HostEnvironment.BaseAddress}");
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 

@@ -1,11 +1,13 @@
-﻿namespace IoTAS.Shared.Hubs
+﻿using System;
+
+namespace IoTAS.Shared.Hubs
 {
     /// <summary>
-    /// Marker interface for input DTO records from Clients to the 
-    /// Server's SignalR Hubs
+    /// Marker interface for Hub input and connection Event records from
+    /// Clients (devices and Monitors) to the Server's SignalR Hubs
     /// </summary>
-    public interface IHubInDTO
+    public interface IHubEvent
     {
-        // empty marker interface
+        // Empty marker interface
     }
 }
