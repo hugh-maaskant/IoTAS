@@ -6,20 +6,18 @@ using System.Threading.Tasks;
 
 namespace IoTAS.Shared.Hubs
 {
-    public record DeviceHeartbeatOutDTO
-    {
-        int deviceId;               // The Id of the Device
-        DateTime receiveddAt;       // The DateTime that the HeartBeat was received
-    }
+    public record DeviceHeartbeatOutDTO(
+                    int DeviceId,               // The Id of the Device
+                    DateTime ReceivedAt         // The DateTime that the HeartBeat was received
+                  );
 
-    public record DeviceStatusOutDTO
-    {
-        int deviceId;               // The Id of the Device
-        string deviceName;          // The human name for the Device
-        DateTime firstRegisteredAt; // The very first registration DateTime
-        DateTime lastRegisteredAt;  // The most recent registration DateTime
-        DateTime lastSeenAt;        // The most recently seen registration or heartbeat DateTime
-    }
+    public record DeviceStatusOutDTO(
+                    int DeviceId,               // The Id of the Device
+                    string DeviceName,          // The human name for the Device
+                    DateTime FirstRegisteredAt, // The very first registration DateTime
+                    DateTime LastRegisteredAt,  // The most recent registration DateTime
+                    DateTime LastSeenAt         // The most recently seen registration or heartbeat DateTime
+                  );
 
     /// <summary>
     /// Typesafe Hub Interface for the IoTAS Server to signal (call) the Monitor Clients
