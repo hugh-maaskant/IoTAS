@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove=".DS_Store" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\IoTAS\Shared\IoTAS.Shared.csproj" />
   </ItemGroup>
 
