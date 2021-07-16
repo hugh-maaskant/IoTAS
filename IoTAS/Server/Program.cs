@@ -25,7 +25,7 @@ namespace IoTAS.Server
 
             try
             {
-                Log.Information("Starting web host");
+                Log.Information("IoTAS Starting web host");
                 CreateHostBuilder(args).Build().Run();
                 return 0;
             }

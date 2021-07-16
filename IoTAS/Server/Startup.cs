@@ -26,7 +26,7 @@ namespace IoTAS.Server
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-
+            Log.Information(nameof(Startup) + ": " + nameof(ConfigureServices));
             services.AddControllersWithViews();
             services.AddRazorPages();
             services.AddSignalR();
@@ -35,6 +35,7 @@ namespace IoTAS.Server
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            Log.Information(nameof(Startup) + ": " + nameof(Configure));
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -62,6 +63,7 @@ namespace IoTAS.Server
                 endpoints.MapRazorPages();
                 endpoints.MapControllers();
                 endpoints.MapHub<Hubs.DeviceHub>(IDeviceHubServer.path);
+                endpoints.MapHub<Hubs.ChatHub>("/chathub");
                 endpoints.MapFallbackToFile("index.html");
             });
         }

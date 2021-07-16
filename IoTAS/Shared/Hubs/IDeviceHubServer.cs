@@ -36,13 +36,13 @@ namespace IoTAS.Shared.Hubs
         /// </summary>
         /// <param name="deviceRegistrationAttributes">The Device's registrationj attributes</param>
         /// <returns>A Task</returns>
-        Task RegisterDevice(DeviceRegistrationInDTO deviceRegistrationAttributes);
+        public Task RegisterDevice(DeviceRegistrationInDTO deviceRegistrationAttributes);
 
         /// <summary>
         /// Heartbeat message from a Device.   
         /// </summary>
         /// <param name="deviceId">The Device Id as defined by the Device</param>
         /// <returns>A Task</returns>
-        Task Heartbeat(DeviceHeartbeatInDTO deviceHeartbeatAttributes);
+        public Task Heartbeat(DeviceHeartbeatInDTO deviceHeartbeatAttributes);
     }
 }

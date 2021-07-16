@@ -21,13 +21,11 @@ namespace IoTAS.Server.Hubs
         public DeviceHub(ILogger<DeviceHub> logger)
         {
             this.logger = logger;
-
-            logger.LogInformation("DeviceHub created");
         }
 
         public override async Task OnConnectedAsync()
         {
-            logger.LogInformation("Device connected {ConnectionId}", Context.ConnectionId);
+            logger.LogInformation("Device connected with ConnectionId {ConnectionId}", Context.ConnectionId);
             await base.OnConnectedAsync();
         }
 
@@ -35,7 +33,7 @@ namespace IoTAS.Server.Hubs
         {
             if (exception == null)
             {
-                logger.LogInformation("Device disconnected {ConnectionId}", Context.ConnectionId);
+                logger.LogInformation("Device with ConnectionId {ConnectionId} disconnected", Context.ConnectionId);
             }
             else
             {
@@ -44,20 +42,20 @@ namespace IoTAS.Server.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        Task IDeviceHubServer.Heartbeat(DeviceHeartbeatInDTO deviceHeartbeatAttributes)
+        public Task RegisterDevice(DeviceRegistrationInDTO deviceRegistrationAttributes)
         {
-            logger.LogInformation("Heartbeat received from Device with {DeviceId}", 
-                                   deviceHeartbeatAttributes.DeviceId);
+            logger.LogInformation("Device registration received from Device with DeviceId {DeviceId} on Connection {ConnectionId}",
+                                   deviceRegistrationAttributes.DeviceId, Context.ConnectionId);
 
             return Task.CompletedTask;
         }
 
-        Task IDeviceHubServer.RegisterDevice(DeviceRegistrationInDTO deviceRegistrationAttributes)
+        public Task Heartbeat(DeviceHeartbeatInDTO deviceHeartbeatAttributes)
         {
-            logger.LogInformation("Device registration received from Device with {DeviceId}", 
-                                   deviceRegistrationAttributes.DeviceId);
+            logger.LogInformation("Heartbeat received from Device with DeviceId {DeviceId} on Connection {ConnectionId}", 
+                                   deviceHeartbeatAttributes.DeviceId, Context.ConnectionId);
 
             return Task.CompletedTask;
-        }
+        }        
     }
 }

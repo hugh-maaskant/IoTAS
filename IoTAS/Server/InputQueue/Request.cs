@@ -7,7 +7,7 @@ using IoTAS.Shared.Hubs;
 namespace IoTAS.Server.InputQueue
 {
     /// <summary>
-    /// The Request record that gets queued on input from a Hub
+    /// The Request record that gets queued on input from a Hubup 
     /// </summary>
     public record Request(DateTime ReceivedAt, IHubEvent Data)
     {
