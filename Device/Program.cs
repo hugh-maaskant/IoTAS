@@ -10,6 +10,10 @@ namespace IoTAS.Device
 {
     class Program
     {
+        //Hardcoded for now, possibly get from configuration lateron
+        private static readonly string hubUrlHttps = "https://localhost:44388" + IDeviceHubServer.path;
+        private static readonly string hubUrlHttp  = "http://localhost:58939" + IDeviceHubServer.path;
+
         // Must be a field so the event handlers can access them :-(.
         private static readonly CancellationTokenSource tokenSource = new();
         private static HubConnection connection;
@@ -18,13 +22,13 @@ namespace IoTAS.Device
         {
             Console.WriteLine("Device started");
             
-            //  In future this might be passed in as a command argument
-            string hubUrl = "https://localhost:44388" + IDeviceHubServer.path;
-            hubUrl = "http://localhost:58939" + IDeviceHubServer.path;
+            //  In future this might be passed in as a configuration item or a command argument
+            string hubUrl = hubUrlHttps;
+
             Console.WriteLine($"Using server at {hubUrl}");
             Console.WriteLine();
 
-            //  In future this might be passed in as a command argument
+            //  In future this might be passed in as a configuration item or a command argument
             int deviceId = GetDeviceId();
             if (deviceId != 0)
             {
