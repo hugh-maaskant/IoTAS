@@ -1,26 +1,14 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.SignalR.Client
+@using IoTAS.Shared.Hubs
 @inject NavigationManager NavigationManager
 @implements IAsyncDisposable
 
-<h3>ChatHubUrl = @(chatHubUrl != null ? chatHubUrl.ToString() : "Still unknown ...")</h3>
+<h3>Device Monitor</h3>
 
-<div class="form-group">
-    <label>
-        User:
-        <input @bind="userInput" />
-    </label>
-</div>
-<div class="form-group">
-    <label>
-        Message:
-        <input @bind="messageInput" size="50" />
-    </label>
-</div>
-<button @onclick="Send" disabled="@(!IsConnected)">Send</button>
-
-<hr>
-
+<p>
+    Link status: @(IsConnected ? "up" : "down")
+</p>
 <ul id="messagesList">
     @foreach (var message in messages)
     {
@@ -28,36 +16,46 @@
     }
 </ul>
 
+
 @code {
     private HubConnection hubConnection;
     private List<string> messages = new List<string>();
-    private string userInput;
-    private string messageInput;
-    private Uri chatHubUrl;
+    private string message;
+    private Uri monitorHubUrl;
 
     protected override async Task OnInitializedAsync()
     {
-        chatHubUrl = NavigationManager.ToAbsoluteUri("/chathub");
+        monitorHubUrl = NavigationManager.ToAbsoluteUri(IMonitorHubServer.path);
 
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(chatHubUrl)
+            .WithUrl(monitorHubUrl)
             .Build();
 
-        hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
+        // Register the Hub callback methods
+        hubConnection.On<SrvToMonDeviceHeartbeatArgs>("DeviceHeartBeatUpdate", (hearbeatArgs) =>
         {
-            var encodedMsg = $"{user}: {message}";
-            messages.Add(encodedMsg);
+            messages.Add(hearbeatArgs.ToString());
+            StateHasChanged();
+        });
+
+        hubConnection.On<SrvToMonDeviceStatusArgs>("DeviceStatusReport", (statusArgs) =>
+        {
+            messages.Add(statusArgs.ToString());
             StateHasChanged();
         });
 
         await hubConnection.StartAsync();
+
+        if (IsConnected)
+        {
+            MonToSrvRegistrationArgs registrationArgs = new();
+            await hubConnection.SendAsync(nameof(IMonitorHubServer.RegisterMonitorAsync), registrationArgs);
+            Console.WriteLine($"Monitor has been registered with the Server, connection = {hubConnection.ConnectionId}");
+        }
     }
 
-    async Task Send() =>
-        await hubConnection.SendAsync("SendMessage", userInput, messageInput);
-
     public bool IsConnected =>
-        hubConnection.State == HubConnectionState.Connected;
+    hubConnection.State == HubConnectionState.Connected;
 
     public async ValueTask DisposeAsync()
     {

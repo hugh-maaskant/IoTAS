@@ -63,7 +63,7 @@ namespace IoTAS.Server
                 endpoints.MapRazorPages();
                 endpoints.MapControllers();
                 endpoints.MapHub<Hubs.DeviceHub>(IDeviceHubServer.path);
-                endpoints.MapHub<Hubs.ChatHub>("/chathub");
+                endpoints.MapHub<Hubs.MonitorHub>(IMonitorHubServer.path);
                 endpoints.MapFallbackToFile("index.html");
             });
         }

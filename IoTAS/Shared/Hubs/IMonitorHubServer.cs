@@ -39,7 +39,7 @@ namespace IoTAS.Shared.Hubs
         /// <summary>
         /// The local path to the MonitorHub on the IoTAS Server 
         /// </summary>
-        public const string monitorHubPath = "/monitor-hub";
+        public const string path = "/monitor-hub";
 
         /// <summary>
         /// Register a Monitor in the Server.
