@@ -15,7 +15,7 @@ namespace IoTAS.Shared.Hubs
     /// without being a breaking change on the interface itself (as long as
     /// the server can deal with any of its historic variants.    /// 
     /// </remarks>
-    public record MonitorRegistrationInDTO : IHubEvent
+    public record MonToSrvRegistrationArgs : IHubArgs
     {
         // empty at this time
     }
@@ -39,14 +39,14 @@ namespace IoTAS.Shared.Hubs
         /// <summary>
         /// The local path to the MonitorHub on the IoTAS Server 
         /// </summary>
-        public const string monitorHubPath = "/monitor";
+        public const string monitorHubPath = "/monitor-hub";
 
         /// <summary>
         /// Register a Monitor in the Server.
         /// </summary>
-        /// <param name="monitorRegistrationAttributes"></param>
+        /// <param name="monitorRegistrationArgs"></param>
         /// <returns>A Task</returns>
-        Task RegisterMonitor(MonitorRegistrationInDTO monitorRegistrationAttributes);
+        Task RegisterMonitorAsync(MonToSrvRegistrationArgs monitorRegistrationArgs);
 
     }
 }

@@ -7,14 +7,14 @@ namespace IoTAS.Shared.Hubs
     /// Device Attributes that need to be passed to the Server
     /// during Device Registration.
     /// </summary>
-    public record DeviceRegistrationInDTO(int DeviceId) : IHubEvent;
+    public record DevToSrvDeviceRegistrationArgs(int DeviceId) : IHubArgs;
     
 
     /// <summary>
     /// Device Attributes that need to be passed to the Server
-    /// for a Heartbeat message
+    /// for a HandleHeartbeatAsync message
     /// </summary>
-    public record DeviceHeartbeatInDTO(int DeviceId) : IHubEvent;
+    public record DevToSrvDeviceHeartbeatArgs(int DeviceId) : IHubArgs;
 
 
     /// <summary>
@@ -29,20 +29,20 @@ namespace IoTAS.Shared.Hubs
         /// <summary>
         /// The local path to the DeviceHub on the IoTAS Server 
         /// </summary>
-        public const string path = "/device";
+        public const string path = "/device-hub";
 
         /// <summary>
         /// Register a Device in the Server.
         /// </summary>
-        /// <param name="deviceRegistrationAttributes">The Device's registrationj attributes</param>
+        /// <param name="deviceRegistrationArgs">The Device's registration arguments</param>
         /// <returns>A Task</returns>
-        public Task RegisterDevice(DeviceRegistrationInDTO deviceRegistrationAttributes);
+        public Task RegisterDeviceAsync(DevToSrvDeviceRegistrationArgs deviceRegistrationArgs);
 
         /// <summary>
-        /// Heartbeat message from a Device.   
+        /// HandleHeartbeatAsync message from a Device.   
         /// </summary>
-        /// <param name="deviceId">The Device Id as defined by the Device</param>
+        /// <param name="deviceHeartbeatArgs">The Device' heartbeat arguments</param>
         /// <returns>A Task</returns>
-        public Task Heartbeat(DeviceHeartbeatInDTO deviceHeartbeatAttributes);
+        public Task HandleHeartbeatAsync(DevToSrvDeviceHeartbeatArgs deviceHeartbeatArgs);
     }
 }

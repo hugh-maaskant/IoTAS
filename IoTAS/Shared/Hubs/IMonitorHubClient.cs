@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace IoTAS.Shared.Hubs
 {
-    public record DeviceHeartbeatOutDTO
+    public record SrvToMonDeviceHeartbeatArgs
     (
         int      DeviceId,          // The Id of the Device
         DateTime ReceivedAt         // The DateTime that the HeartBeat was received
     );
 
-    public record DeviceStatusOutDTO
+    public record SrvToMonDeviceStatusArgs
     (
         int      DeviceId,          // The Id of the Device
         string   DeviceName,        // The human name for the Device
@@ -28,18 +28,16 @@ namespace IoTAS.Shared.Hubs
     public interface IMonitorHubClient
     {
         /// <summary>
-        /// A message to notify Monitor(s) of a received Device Heartbeat
+        /// A message to notify Monitor(s) of a received Device HandleHeartbeatAsync
         /// </summary>
-        /// <param name="deviceId">The DeviceId of the bespoke Device</param>
-        /// <param name="receivedAt">The DateTime that the heartbeat was received</param>
-        /// <param name="attributes">Aptional heartbead attributes</param>
+        /// <param name="hearbeatArgs">Aptional heartbead attributes</param>
         /// <returns>A Task</returns>
-        public Task DeviceHeartBeatUpdate(DeviceHeartbeatOutDTO hearbeatAttributes);
+        public Task DeviceHeartBeatUpdate(SrvToMonDeviceHeartbeatArgs hearbeatArgs);
 
         /// <summary>
         /// A message to inform a Monitor of the current Devices status
         /// </summary>
-        /// <param name="statusAttributesList">A list of Device status attributes</param>
+        /// <param name="statusArgsList">A List of Device status attributes</param>
         /// <returns>A Task</returns>
         /// <remarks>
         /// When there are too many Devices, the server may send this message 
@@ -48,6 +46,6 @@ namespace IoTAS.Shared.Hubs
         /// DeviceHearbeatUpdate until the comlete list with known Devices
         /// has been sent.
         /// </remarks>
-        public Task DeviceStatusReport(DeviceStatusOutDTO[] statusAttributesList);
+        public Task DeviceStatusReport(SrvToMonDeviceStatusArgs[] statusAargssList);
     }
 }

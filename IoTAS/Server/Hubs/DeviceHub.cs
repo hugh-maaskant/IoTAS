@@ -5,7 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+
 using IoTAS.Shared.Hubs;
+using IoTAS.Server.InputQueue;
 
 namespace IoTAS.Server.Hubs
 {
@@ -42,17 +44,19 @@ namespace IoTAS.Server.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public Task RegisterDevice(DeviceRegistrationInDTO deviceRegistrationAttributes)
+        public Task RegisterDeviceAsync(DevToSrvDeviceRegistrationArgs deviceRegistrationAttributes)
         {
             logger.LogInformation("Device registration received from Device with DeviceId {DeviceId} on Connection {ConnectionId}",
                                    deviceRegistrationAttributes.DeviceId, Context.ConnectionId);
 
+            Request request = Request.FromInDTO(deviceRegistrationAttributes);
+
             return Task.CompletedTask;
         }
 
-        public Task Heartbeat(DeviceHeartbeatInDTO deviceHeartbeatAttributes)
+        public Task HandleHeartbeatAsync(DevToSrvDeviceHeartbeatArgs deviceHeartbeatAttributes)
         {
-            logger.LogInformation("Heartbeat received from Device with DeviceId {DeviceId} on Connection {ConnectionId}", 
+            logger.LogInformation("HandleHeartbeatAsync received from Device with DeviceId {DeviceId} on Connection {ConnectionId}", 
                                    deviceHeartbeatAttributes.DeviceId, Context.ConnectionId);
 
             return Task.CompletedTask;

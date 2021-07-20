@@ -41,16 +41,17 @@ namespace IoTAS.Device
                 if (connection == null)
                 {
                     Console.WriteLine("Error in connection builder");
+                    // Allow user time to read the message in the console window before it closes
                     await Task.Delay(5000, tokenSource.Token);
                 }
 
-                bool started = await StartAndConfigureConnection(connection, tokenSource.Token);
+                bool started = await StartAndConfigureConnectionAsync(connection, tokenSource.Token);
                 if (started)
                 {
-                    bool registered = await SendRegistration(connection, deviceId, tokenSource.Token);
+                    bool registered = await SendRegistrationAsync(connection, deviceId, tokenSource.Token);
                     if (registered)
                     {
-                        await SendHeartbeat(connection, deviceId, tokenSource.Token);
+                        await SendHeartbeatAsync(connection, deviceId, tokenSource.Token);
                     }
                 }
                 //
@@ -58,7 +59,7 @@ namespace IoTAS.Device
                 //
                 if (started)
                 {
-                    await TeardownConnection(connection);
+                    await TeardownConnectionAsync(connection);
                 }
 
                 tokenSource.Dispose();
@@ -122,7 +123,7 @@ namespace IoTAS.Device
         /// <returns>
         /// <see langword="true"/> upon succesful connection startup, <see langword="false"/> otherwise
         /// </returns>
-        private static async Task<bool> StartAndConfigureConnection(HubConnection connection, CancellationToken token)
+        private static async Task<bool> StartAndConfigureConnectionAsync(HubConnection connection, CancellationToken token)
         {
             bool connected = await ConnectWithRetryAsync(connection, token);
 
@@ -215,11 +216,11 @@ namespace IoTAS.Device
         }
 
         /// <summary>
-        /// Teardown and 
+        /// Teardown and Dispose connection
         /// </summary>
-        /// <param name="connection"></param>
+        /// <param name="connection">The connection to teardown</param>
         /// <returns></returns>
-        private static async Task TeardownConnection(HubConnection connection)
+        private static async Task TeardownConnectionAsync(HubConnection connection)
         {
             Console.WriteLine($"Tearing down connection ...");
             if (connection == null) return;
@@ -251,19 +252,19 @@ namespace IoTAS.Device
         /// <param name="deviceId">The DeviceId for this Device</param>
         /// <param name="token">Cancellation token to end the Task</param>
         /// <returns><see langword="true"/> upon succesful registration, <see langword="false"/> otherwise</returns>
-        private static async Task<bool> SendRegistration(HubConnection connection, int deviceId, CancellationToken token)
+        private static async Task<bool> SendRegistrationAsync(HubConnection connection, int deviceId, CancellationToken token)
         {
             try
             {
-                var dto = new DeviceRegistrationInDTO(deviceId);
+                var dto = new DevToSrvDeviceRegistrationArgs(deviceId);
                 Console.WriteLine($"Registering Device with Id {deviceId} ...");
-                await connection.InvokeAsync(nameof(IDeviceHubServer.RegisterDevice), dto, token);
+                await connection.InvokeAsync(nameof(IDeviceHubServer.RegisterDeviceAsync), dto, token);
                 Console.WriteLine("Registration succesfull");
                 return true;
             }
             catch (TaskCanceledException)
             {
-                Console.WriteLine("SendRegistration was cancelled");
+                Console.WriteLine("SendRegistrationAsync was cancelled");
                 return false;
             }
             catch (Exception e)
@@ -280,14 +281,14 @@ namespace IoTAS.Device
         /// <summary>
         /// Sends Hearbeat messages with 15 second interval
         /// </summary>
-        /// <param name="connection">The HubConnection on which the Heartbeat is to be send</param>
+        /// <param name="connection">The HubConnection on which the HandleHeartbeatAsync is to be send</param>
         /// <param name="deviceId">The DeviceId for this Device</param>
         /// <param name="token">Cancellation token to end the Task</param>
         /// <returns>A completed Task</returns>
-        private static async Task SendHeartbeat(HubConnection connection, int deviceId, CancellationToken token)
+        private static async Task SendHeartbeatAsync(HubConnection connection, int deviceId, CancellationToken token)
         {
-            Console.WriteLine("Starting SendHeartbeat task ...");
-            var dto = new DeviceHeartbeatInDTO(deviceId);
+            Console.WriteLine("Starting SendHeartbeatAsync task ...");
+            var dto = new DevToSrvDeviceHeartbeatArgs(deviceId);
             int heartbeatNumber = 0;
 
             while (!token.IsCancellationRequested)
@@ -301,24 +302,24 @@ namespace IoTAS.Device
                 }
                 catch (TaskCanceledException)
                 {
-                    Console.WriteLine("SendHeartbeat cancelled while waiting to send heartbeat");
+                    Console.WriteLine("SendHeartbeatAsync cancelled while waiting to send heartbeat");
                     return;
                 }
 
                 // Send the heartbeat; in case of cancellation: end the Task
                 try
                 {
-                    await connection.InvokeAsync(nameof(IDeviceHubServer.Heartbeat), dto, token);
-                    Console.WriteLine($"SendHeartbeat {heartbeatNumber} succeded");
+                    await connection.InvokeAsync(nameof(IDeviceHubServer.HandleHeartbeatAsync), dto, token);
+                    Console.WriteLine($"SendHeartbeatAsync {heartbeatNumber} succeded");
                 }
                 catch (TaskCanceledException)
                 {
-                    Console.WriteLine($"SendHeartbeat {heartbeatNumber} cancelled while sending heartbeat");
+                    Console.WriteLine($"SendHeartbeatAsync {heartbeatNumber} cancelled while sending heartbeat");
                     return;
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"SendHeartbeat {heartbeatNumber} error while sending heartbeat: {e.Message}");
+                    Console.WriteLine($"SendHeartbeatAsync {heartbeatNumber} error while sending heartbeat: {e.Message}");
                 }
             }
         }
