@@ -28,7 +28,7 @@ namespace IoTAS.Server.InputQueue
         public HubsInputQueueService(ILogger<HubsInputQueueService> logger)
         {
             this.logger = logger;
-            this.logger.LogDebug("Created");
+            this.logger.LogInformation("Created");
         }
 
         /// <summary>
@@ -90,6 +90,7 @@ namespace IoTAS.Server.InputQueue
         public void Dispose()
         {
             proceedSem?.Dispose();
+            logger.LogInformation("Disposed");
         }
     }
 }
