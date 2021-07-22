@@ -55,10 +55,11 @@ namespace IoTAS.Server.InputQueue
         }
 
         /// <summary>
-        /// Blocking wait for a Request in the queue and threadsafely Dequeue it
+        /// Blocking wait for a Request in the queue 
+        /// (respecting the CancellationToken), threadsafely Dequeue and return it.
         /// </summary>
         /// <param name="token"></param>
-        /// <returns>The dequeued Request or null in case of cancellation</returns>
+        /// <returns>The dequeued Request or <see langword="null"/> in case of cancellation</returns>
         public Request? Dequeue(CancellationToken token)
         {
             Request request = null;
