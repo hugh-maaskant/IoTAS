@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace IoTAS.Server.InputQueue
@@ -27,7 +27,7 @@ namespace IoTAS.Server.InputQueue
 
         public HubsInputQueueService(ILogger<HubsInputQueueService> logger)
         {
-            this.logger = logger;
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.logger.LogInformation("Created");
         }
 
@@ -49,42 +49,40 @@ namespace IoTAS.Server.InputQueue
 
             if (maxItemsQueued > maxItemsLogged)
             {
-                logger.LogInformation($"MaxQueuedItems reached: {maxItemsQueued}");
+                logger.LogInformation($"maxItemsQueued reached: {maxItemsQueued}");
                 maxItemsLogged = maxItemsQueued;
             }
         }
 
         /// <summary>
-        /// Blocking wait for a Request in the queue 
-        /// (respecting the CancellationToken), threadsafely Dequeue and return it.
+        /// Wait for a Request in the queue while respecting the CancellationToken, threadsafely Dequeue and return it.
         /// </summary>
         /// <param name="token"></param>
         /// <returns>The dequeued Request or <see langword="null"/> in case of cancellation</returns>
-        public Request? Dequeue(CancellationToken token)
+        public async Task<Request> DequeueAsync(CancellationToken token)
         {
-            Request request = null;
-
             try
             {
-                proceedSem.Wait(token);
+                await proceedSem.WaitAsync(token);
 
                 logger.LogDebug("Dequeueing");
 
                 lock (lockObj)
                 {
-                    request = requestsQueue.Dequeue();
+                    Request request = requestsQueue.Dequeue();
+                    return request;
                 }
             }
             catch (OperationCanceledException e)
             {
-                logger.LogWarning($"Dequeue - Wait operation cancelled: {e.Message}");
+                logger.LogWarning("Dequeue - Wait operation cancelled", e);
+                throw;
             }
             catch (Exception e)
             {
                 logger.LogError("Dequeue - Wait operation exception", e);
+                throw;
             }
-
-            return request;
         }
 
         public void Dispose()
