@@ -19,10 +19,12 @@ namespace IoTAS.Server.Hubs
     public class DeviceHub : Hub<IDeviceHub>, IDeviceHubServer
     {
         private readonly ILogger<DeviceHub> logger;
+        private readonly IHubsInputQueueService queueService;
 
-        public DeviceHub(ILogger<DeviceHub> logger)
+        public DeviceHub(ILogger<DeviceHub> logger, IHubsInputQueueService queueService)
         {
-            this.logger = logger;
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
         }
 
         public override async Task OnConnectedAsync()
@@ -51,6 +53,8 @@ namespace IoTAS.Server.Hubs
 
             Request request = Request.FromInDTO(deviceRegistrationAttributes);
 
+            queueService.Enqueue(request);
+
             return Task.CompletedTask;
         }
 
@@ -59,7 +63,10 @@ namespace IoTAS.Server.Hubs
             logger.LogInformation("HandleHeartbeatAsync received from Device with DeviceId {DeviceId} on Connection {ConnectionId}", 
                                    deviceHeartbeatAttributes.DeviceId, Context.ConnectionId);
 
-            return Task.CompletedTask;
+            Request request = Request.FromInDTO(deviceHeartbeatAttributes);
+
+            queueService.Enqueue(request);
+            return Task.CompletedTask; ;
         }        
     }
 }

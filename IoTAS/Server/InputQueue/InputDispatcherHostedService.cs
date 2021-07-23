@@ -21,8 +21,6 @@ namespace IoTAS.Server.InputQueue
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.inputQueue = inputQueue ?? throw new ArgumentNullException(nameof(inputQueue));
-
-            inputQueue.Enqueue(new Request(DateTime.Now, new Shared.Hubs.DevToSrvDeviceHeartbeatArgs(5)));
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -35,9 +33,9 @@ namespace IoTAS.Server.InputQueue
             {
                 try
                 {
+                    logger.LogInformation("Waiting for request ...");
                     Request request = await inputQueue.DequeueAsync(stoppingToken);
-
-                    logger.LogInformation("Retrieved request {request}");
+                    logger.LogInformation($"Retrieved request {request}");
                 }
                 catch (OperationCanceledException e)
                 {
@@ -50,7 +48,7 @@ namespace IoTAS.Server.InputQueue
                 }
             }
 
-            logger.LogInformation("Execution stopped");
+            logger.LogInformation($"Execution stopped fatalError = {fatalError}, cancellation rquested = {stoppingToken.IsCancellationRequested}");
         }
     }
 }

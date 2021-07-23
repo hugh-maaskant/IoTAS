@@ -10,7 +10,7 @@ namespace IoTAS.Server.InputQueue
     /// Queue for messages received on the Hubs
     /// </summary>
     /// <remarks>
-    /// Provides thread-safe operations and a blocking Dequeue operation
+    /// Provides a thread-safe Enqueue operation and an asynchronous blocking Dequeue operation
     /// </remarks>
     public sealed class HubsInputQueueService : IHubsInputQueueService
     {
