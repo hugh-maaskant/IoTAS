@@ -20,9 +20,12 @@ namespace IoTAS.Server.Hubs
     {
         private readonly ILogger<IMonitorHub> logger;
 
-        public MonitorHub(ILogger<IMonitorHub> logger)
+        private readonly IHubsInputQueueService queueService;
+
+        public MonitorHub(ILogger<IMonitorHub> logger, IHubsInputQueueService queueService)
         {
-            this.logger = logger;
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
         }
 
         public override async Task OnConnectedAsync()
@@ -48,7 +51,9 @@ namespace IoTAS.Server.Hubs
         {
             logger.LogInformation("Monitor registration received on Connection {ConnectionId}", Context.ConnectionId);
 
-            // ToDo: nothing ???
+            Request request = Request.FromInDTO(monitorRegistrationArgs);
+
+            queueService.Enqueue(request);
 
             return Task.CompletedTask;
         }
