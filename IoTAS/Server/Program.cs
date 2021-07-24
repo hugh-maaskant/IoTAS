@@ -15,7 +15,7 @@ namespace IoTAS.Server
 {
     public class Program
     {
-        private static string consoleLogFormat =
+        private static readonly string consoleLogFormat =
             "[{@t:HH:mm:ss} {@l:u3}]" +
             "{#if SourceContext is not null}" + 
                 " [{Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]" +
