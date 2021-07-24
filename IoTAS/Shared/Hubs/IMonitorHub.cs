@@ -25,7 +25,7 @@ namespace IoTAS.Shared.Hubs
     /// <summary>
     /// Typesafe Hub Interface for the IoTAS Server to signal (call) the Monitor Clients
     /// </summary>
-    public interface IMonitorHubClient
+    public interface IMonitorHub
     {
         /// <summary>
         /// A message to notify Monitor(s) of a received Device HandleHeartbeatAsync
@@ -41,10 +41,10 @@ namespace IoTAS.Shared.Hubs
         /// <returns>A Task</returns>
         /// <remarks>
         /// When there are too many Devices, the server may send this message 
-        /// multiple times (i.e. in chunks). The Server guarantees that it will 
-        /// not send duplicates in the chunks and that it will not send a 
-        /// DeviceHearbeatUpdate until the comlete list with known Devices
-        /// has been sent.
+        /// multiple times (i.e. in chunks). The Server must guarantee that it 
+        /// will not send duplicates in the chunks and that it will not send a 
+        /// DeviceHearbeatUpdate until the comlete list with known Devices has 
+        /// been sent.
         /// </remarks>
         public Task DeviceStatusReport(SrvToMonDeviceStatusArgs[] statusAargssList);
     }

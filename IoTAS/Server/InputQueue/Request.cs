@@ -9,14 +9,14 @@ namespace IoTAS.Server.InputQueue
     /// <summary>
     /// The Request record that gets queued on input from a Hubup 
     /// </summary>
-    public record Request(DateTime ReceivedAt, IHubArgs ReceivedData)
+    public record Request(DateTime ReceivedAt, HubInArgs ReceivedData)
     {
         /// <summary>
-        /// Create a Request from an IHubArgs
+        /// Create a Request from an HubInArgs
         /// </summary>
         /// <param name="receivedData">The input hub event data</param>
         /// <returns>A Request record</returns>
-        public static Request FromInDTO(IHubArgs receivedData)
+        public static Request FromInDTO(HubInArgs receivedData)
         {
             return new Request(DateTime.Now, receivedData);
         }

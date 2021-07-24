@@ -11,11 +11,6 @@ using IoTAS.Server.InputQueue;
 
 namespace IoTAS.Server.Hubs
 {
-    public interface IMonitorHub
-    {
-        // empty for milestone 1
-    }
-
     public class MonitorHub : Hub<IMonitorHub>
     {
         private readonly ILogger<IMonitorHub> logger;
@@ -46,6 +41,7 @@ namespace IoTAS.Server.Hubs
             }
             await base.OnDisconnectedAsync(exception);
         }
+
 
         public Task RegisterMonitorAsync(MonToSrvRegistrationArgs monitorRegistrationArgs)
         {

@@ -11,11 +11,6 @@ using IoTAS.Server.InputQueue;
 
 namespace IoTAS.Server.Hubs
 {
-    public interface IDeviceHub
-    {
-        // empty for milestone 1
-    }
-
     public class DeviceHub : Hub<IDeviceHub>, IDeviceHubServer
     {
         private readonly ILogger<DeviceHub> logger;

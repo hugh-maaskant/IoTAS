@@ -7,14 +7,14 @@ namespace IoTAS.Shared.Hubs
     /// Device Attributes that need to be passed to the Server
     /// during Device Registration.
     /// </summary>
-    public record DevToSrvDeviceRegistrationArgs(int DeviceId) : IHubArgs;
+    public record DevToSrvDeviceRegistrationArgs(int DeviceId) : HubInArgs;
     
 
     /// <summary>
     /// Device Attributes that need to be passed to the Server
-    /// for a HandleHeartbeatAsync message
+    /// for a Device Heartbeat
     /// </summary>
-    public record DevToSrvDeviceHeartbeatArgs(int DeviceId) : IHubArgs;
+    public record DevToSrvDeviceHeartbeatArgs(int DeviceId) : HubInArgs;
 
 
     /// <summary>
