@@ -16,11 +16,11 @@ namespace IoTAS.Server
     public class Program
     {
         private static string consoleLogFormat =
-            "[{@t:HH:mm:ss} {@l:u3}" +
+            "[{@t:HH:mm:ss} {@l:u3}]" +
             "{#if SourceContext is not null}" + 
-                " {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}" +
+                " [{Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]" +
             "{#end}" +
-            "] {@m}\n{@x}";
+            " {@m}\n{@x}";
 
         public static int Main(string[] args)
         {

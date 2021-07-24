@@ -32,11 +32,11 @@ namespace IoTAS.Server.Hubs
         {
             if (exception == null)
             {
-                logger.LogInformation("Device with ConnectionId {ConnectionId} disconnected", Context.ConnectionId);
+                logger.LogWarning("Device with ConnectionId {ConnectionId} disconnected", Context.ConnectionId);
             }
             else
             {
-                logger.LogWarning(exception, "Device disconnected with exception");
+                logger.LogError(exception, "Device disconnected with exception");
             }
             await base.OnDisconnectedAsync(exception);
         }
