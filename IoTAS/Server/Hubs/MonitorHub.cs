@@ -11,7 +11,7 @@ using IoTAS.Server.InputQueue;
 
 namespace IoTAS.Server.Hubs
 {
-    public class MonitorHub : Hub<IMonitorHub>
+    public class MonitorHub : Hub<IMonitorHub>, IMonitorHubServer
     {
         private readonly ILogger<IMonitorHub> logger;
 
