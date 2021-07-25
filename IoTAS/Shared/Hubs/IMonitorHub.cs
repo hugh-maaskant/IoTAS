@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace IoTAS.Shared.Hubs
 {
-    public record SrvToMonDeviceHeartbeatArgs
+    public record SrvToMonDeviceHeartbeatDto
     (
         int      DeviceId,          // The Id of the Device
         DateTime ReceivedAt         // The DateTime that the HeartBeat was received
     );
 
-    public record SrvToMonDeviceStatusArgs
+    public record SrvToMonDeviceStatusDto
     (
         int      DeviceId,          // The Id of the Device
         DateTime FirstRegisteredAt, // The very first registration DateTime
@@ -27,23 +27,23 @@ namespace IoTAS.Shared.Hubs
     public interface IMonitorHub
     {
         /// <summary>
-        /// A message to notify Monitor(s) of a received Device HandleHeartbeatAsync
+        /// A remote call to notify Monitor(s) of a received Device ReceiveDeviceHeartbeat
         /// </summary>
-        /// <param name="hearbeatArgs">Aptional heartbead attributes</param>
+        /// <param name="hearbeatDto">Heartbead DTO</param>
         /// <returns>A Task</returns>
-        public Task DeviceHeartBeatUpdate(SrvToMonDeviceHeartbeatArgs hearbeatArgs);
+        public Task ReceiveDeviceHeartbeatUpdate(SrvToMonDeviceHeartbeatDto hearbeatDto);
 
         /// <summary>
-        /// A message to notify Monitor(s) of a received DeviceRegistration
+        /// A remote call to notify Monitor(s) of a received DeviceRegistration
         /// </summary>
-        /// <param name="statusAargs">The Device status attributes</param>
+        /// <param name="statusDto">The Device status attributes</param>
         /// <returns>A Task</returns>
-        public Task DeviceRegistrationUpdate(SrvToMonDeviceStatusArgs statusAargs);
+        public Task ReceiveDeviceRegistrationUpdate(SrvToMonDeviceStatusDto statusDto);
 
         /// <summary>
-        /// A message to inform a Monitor of the current Devices status
+        /// A remote call to inform a Monitor of the current Devices status
         /// </summary>
-        /// <param name="statusArgsList">A List of Device status attributes</param>
+        /// <param name="statusListDto">A List of Device status DTOs</param>
         /// <returns>A Task</returns>
         /// <remarks>
         /// When there are too many Devices, the server may send this message 
@@ -52,6 +52,6 @@ namespace IoTAS.Shared.Hubs
         /// DeviceHearbeatUpdate until the comlete list with known Devices has 
         /// been sent.
         /// </remarks>
-        public Task DeviceStatusesReport(SrvToMonDeviceStatusArgs[] statusAargssList);
+        public Task ReceiveDeviceStatusesReport(SrvToMonDeviceStatusDto[] statusListDto);
     }
 }

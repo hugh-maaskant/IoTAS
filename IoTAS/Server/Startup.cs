@@ -34,6 +34,7 @@ namespace IoTAS.Server
             services.AddSignalR();
 
             services.AddSingleton<IHubsInputQueueService, HubsInputQueueService>();
+            services.AddSingleton<RequestDispatcher, RequestDispatcher>();
             services.AddSingleton<IDeviceStatusStore, VolatileDeviceStatusStore>();
 
             services.AddHostedService<InputDispatcherHostedService>();

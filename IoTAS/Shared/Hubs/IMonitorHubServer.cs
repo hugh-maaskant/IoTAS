@@ -13,9 +13,9 @@ namespace IoTAS.Shared.Hubs
     /// This struct provides options to extend the 
     /// IMonitorHubServer.RegisterMonitor() operation with new data elements
     /// without being a breaking change on the interface itself (as long as
-    /// the server can deal with any of its historic variants.    /// 
+    /// the server can deal with any of its historic variants. 
     /// </remarks>
-    public record MonToSrvRegistrationArgs : HubInArgs
+    public record MonToSrvRegistrationDto : HubInDto
     {
         // empty at this time
     }
@@ -42,11 +42,11 @@ namespace IoTAS.Shared.Hubs
         public const string path = "/monitor-hub";
 
         /// <summary>
-        /// Register a Monitor in the Server.
+        /// Register a Monitor Client in the Server.
         /// </summary>
-        /// <param name="monitorRegistrationArgs"></param>
+        /// <param name="monitorRegistrationDto"></param>
         /// <returns>A Task</returns>
-        Task RegisterMonitorAsync(MonToSrvRegistrationArgs monitorRegistrationArgs);
+        Task RegisterMonitorClient(MonToSrvRegistrationDto monitorRegistrationDto);
 
     }
 }

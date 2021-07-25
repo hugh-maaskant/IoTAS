@@ -11,7 +11,8 @@ namespace IoTAS.Device
     class Program
     {
         //Hardcoded for now, possibly get from configuration lateron
-        private static readonly string hubUrlHttps = "https://localhost:44388" + IDeviceHubServer.path;
+        private static readonly string hubUrlHttps = "https://localhost:5001" + IDeviceHubServer.path;
+        // private static readonly string hubUrlHttps = "https://localhost:44388" + IDeviceHubServer.path;
         // private static readonly string hubUrlHttp  = "http://localhost:58939" + IDeviceHubServer.path;
 
         // Must be a field so the event handlers can access them :-(.
@@ -256,9 +257,9 @@ namespace IoTAS.Device
         {
             try
             {
-                var dto = new DevToSrvDeviceRegistrationArgs(deviceId);
+                var dto = new DevToSrvDeviceRegistrationDto(deviceId);
                 Console.WriteLine($"Registering Device with Id {deviceId} ...");
-                await connection.InvokeAsync(nameof(IDeviceHubServer.RegisterDeviceAsync), dto, token);
+                await connection.InvokeAsync(nameof(IDeviceHubServer.RegisterDeviceClient), dto, token);
                 Console.WriteLine("Registration succesfull");
                 return true;
             }
@@ -281,14 +282,14 @@ namespace IoTAS.Device
         /// <summary>
         /// Sends Hearbeat messages with 15 second interval
         /// </summary>
-        /// <param name="connection">The HubConnection on which the HandleHeartbeatAsync is to be send</param>
+        /// <param name="connection">The HubConnection on which the ReceiveDeviceHeartbeat is to be send</param>
         /// <param name="deviceId">The DeviceId for this Device</param>
         /// <param name="token">Cancellation token to end the Task</param>
         /// <returns>A completed Task</returns>
         private static async Task SendHeartbeatAsync(HubConnection connection, int deviceId, CancellationToken token)
         {
-            Console.WriteLine("Starting SendHeartbeatAsync task ...");
-            var dto = new DevToSrvDeviceHeartbeatArgs(deviceId);
+            Console.WriteLine($"{nameof(SendHeartbeatAsync)} Task started");
+            var dto = new DevToSrvDeviceHeartbeatDto(deviceId);
             int heartbeatNumber = 0;
 
             while (!token.IsCancellationRequested)
@@ -302,24 +303,24 @@ namespace IoTAS.Device
                 }
                 catch (TaskCanceledException)
                 {
-                    Console.WriteLine("SendHeartbeatAsync cancelled while waiting to send heartbeat");
+                    Console.WriteLine($"{nameof(SendHeartbeatAsync)} cancelled while waiting to send heartbeat");
                     return;
                 }
 
                 // Send the heartbeat; in case of cancellation: end the Task
                 try
                 {
-                    await connection.InvokeAsync(nameof(IDeviceHubServer.HandleHeartbeatAsync), dto, token);
-                    Console.WriteLine($"SendHeartbeatAsync {heartbeatNumber} succeded");
+                    await connection.InvokeAsync(nameof(IDeviceHubServer.ReceiveDeviceHeartbeat), dto, token);
+                    Console.WriteLine($"{nameof(SendHeartbeatAsync)} {heartbeatNumber} succeded");
                 }
                 catch (TaskCanceledException)
                 {
-                    Console.WriteLine($"SendHeartbeatAsync {heartbeatNumber} cancelled while sending heartbeat");
+                    Console.WriteLine($"{nameof(SendHeartbeatAsync)} {heartbeatNumber} cancelled while sending heartbeat");
                     return;
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"SendHeartbeatAsync {heartbeatNumber} error while sending heartbeat: {e.Message}");
+                    Console.WriteLine($"{nameof(SendHeartbeatAsync)} {heartbeatNumber} error while sending heartbeat: {e.Message}");
                 }
             }
         }

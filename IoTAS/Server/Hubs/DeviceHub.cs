@@ -41,24 +41,24 @@ namespace IoTAS.Server.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public Task RegisterDeviceAsync(DevToSrvDeviceRegistrationArgs deviceRegistrationAttributes)
+        public Task RegisterDeviceClient(DevToSrvDeviceRegistrationDto deviceRegistrationAttributes)
         {
             logger.LogInformation("Device registration received from Device with DeviceId {DeviceId} on Connection {ConnectionId}",
                                    deviceRegistrationAttributes.DeviceId, Context.ConnectionId);
 
-            Request request = Request.FromInDTO(deviceRegistrationAttributes);
+            Request request = Request.FromClientCall(Context.ConnectionId, deviceRegistrationAttributes);
 
             queueService.Enqueue(request);
 
             return Task.CompletedTask;
         }
 
-        public Task HandleHeartbeatAsync(DevToSrvDeviceHeartbeatArgs deviceHeartbeatAttributes)
+        public Task ReceiveDeviceHeartbeat(DevToSrvDeviceHeartbeatDto deviceHeartbeatAttributes)
         {
-            logger.LogInformation("HandleHeartbeatAsync received from Device with DeviceId {DeviceId} on Connection {ConnectionId}", 
+            logger.LogInformation("ReceiveDeviceHeartbeat received from Device with DeviceId {DeviceId} on Connection {ConnectionId}", 
                                    deviceHeartbeatAttributes.DeviceId, Context.ConnectionId);
 
-            Request request = Request.FromInDTO(deviceHeartbeatAttributes);
+            Request request = Request.FromClientCall(Context.ConnectionId, deviceHeartbeatAttributes);
 
             queueService.Enqueue(request);
             return Task.CompletedTask; ;

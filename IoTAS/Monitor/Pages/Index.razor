@@ -7,7 +7,7 @@
 <h3>Device Monitor</h3>
 
 <p>
-    Link status: @(IsConnected ? "up" : "down")
+    Link status: @(IsConnected ? $"up - connectionId = {ConnectionId}" : "down")
 </p>
 <ul id="messagesList">
     @foreach (var message in messages)
@@ -31,15 +31,21 @@
             .Build();
 
         // Register the Hub callback methods
-        hubConnection.On<SrvToMonDeviceHeartbeatArgs>("DeviceHeartBeatUpdate", (hearbeatArgs) =>
+        hubConnection.On<SrvToMonDeviceHeartbeatDto>(nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate), (hearbeatDto) =>
         {
-            messages.Add(hearbeatArgs.ToString());
+            messages.Add(hearbeatDto.ToString());
             StateHasChanged();
         });
 
-        hubConnection.On<SrvToMonDeviceStatusArgs>("DeviceStatusReport", (statusArgs) =>
+        hubConnection.On<SrvToMonDeviceStatusDto>(nameof(IMonitorHub.ReceiveDeviceRegistrationUpdate), (statusDto) =>
         {
-            messages.Add(statusArgs.ToString());
+            messages.Add(statusDto.ToString());
+            StateHasChanged();
+        });
+
+        hubConnection.On<SrvToMonDeviceStatusDto[]>(nameof(IMonitorHub.ReceiveDeviceStatusesReport), (statusListDto) =>
+        {
+            messages.Add($"Received list of {statusListDto.Length} statusDtos");
             StateHasChanged();
         });
 
@@ -47,14 +53,15 @@
 
         if (IsConnected)
         {
-            MonToSrvRegistrationArgs registrationArgs = new();
-            await hubConnection.SendAsync(nameof(IMonitorHubServer.RegisterMonitorAsync), registrationArgs);
+            MonToSrvRegistrationDto registrationDto = new(); // currently empty --> default record returned
+            await hubConnection.SendAsync(nameof(IMonitorHubServer.RegisterMonitorClient), registrationDto);
             Console.WriteLine($"Monitor has been registered with the Server, connection = {hubConnection.ConnectionId}");
         }
     }
 
-    public bool IsConnected =>
-    hubConnection.State == HubConnectionState.Connected;
+    private bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+
+    private string ConnectionId => hubConnection.ConnectionId;
 
     public async ValueTask DisposeAsync()
     {

@@ -9,18 +9,22 @@ using Microsoft.Extensions.Logging;
 
 namespace IoTAS.Server.InputQueue
 {
-    public class InputDispatcherHostedService : BackgroundService
+    public sealed class InputDispatcherHostedService : BackgroundService
     {
         private readonly ILogger<InputDispatcherHostedService> logger;
 
         private readonly IHubsInputQueueService inputQueue;
 
+        private readonly RequestDispatcher dispatcher;
+
         public InputDispatcherHostedService(
             ILogger<InputDispatcherHostedService> logger,
-            IHubsInputQueueService inputQueue)
+            IHubsInputQueueService inputQueue,
+            RequestDispatcher dispatcher)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.inputQueue = inputQueue ?? throw new ArgumentNullException(nameof(inputQueue));
+            this.dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -36,6 +40,8 @@ namespace IoTAS.Server.InputQueue
                     logger.LogInformation("Waiting for request ...");
                     Request request = await inputQueue.DequeueAsync(stoppingToken);
                     logger.LogInformation($"Retrieved request {request}");
+
+                    await dispatcher.DispatchRequest(request);
                 }
                 catch (OperationCanceledException e)
                 {

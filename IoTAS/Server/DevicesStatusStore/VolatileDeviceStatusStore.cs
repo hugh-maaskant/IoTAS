@@ -19,38 +19,44 @@ namespace IoTAS.Server.DevicesStatusStore
             logger.LogInformation("Store created");
         }
 
-        DeviceReportingStatus IDeviceStatusStore.GetDeviceStatus(int deviceId)
+        public DeviceReportingStatus GetDeviceStatus(int deviceId)
         {
             logger.LogDebug($"Getting DeviceReportingStatus for Device with DeviceId {deviceId}");
-            return store.GetValueOrDefault(deviceId);
+            if (store.GetValueOrDefault(deviceId) is DeviceReportingStatus status)
+            {
+                return status;
+            }
+
+            logger.LogWarning($"{nameof(GetDeviceStatus)} attempted to retrieve a non-existing {nameof(DeviceReportingStatus)} for DeviceId {deviceId}");
+            return new(deviceId, default, default, default);
         }
 
-        IEnumerable<DeviceReportingStatus> IDeviceStatusStore.GetDeviceStatuses()
+        public IEnumerable<DeviceReportingStatus> GetDeviceStatuses()
         {
             var values = store.Values;
-            logger.LogDebug($"Getting DeviceReportingStatus for all {values.Count} Devices");
+            logger.LogDebug($"{nameof(GetDeviceStatuses)} for all {values.Count} Devices");
             
             DeviceReportingStatus[] valuesCopy = new DeviceReportingStatus[values.Count];
             values.CopyTo(valuesCopy, 0);
             return valuesCopy;
         }
 
-        DeviceReportingStatus IDeviceStatusStore.UpateHeartbeat(int deviceId, DateTime receivedAt)
+        public DeviceReportingStatus UpdateHeartbeat(int deviceId, DateTime receivedAt)
         {
-            logger.LogDebug($"Update Heartbeat to {receivedAt} for Device with DeviceId {deviceId}");
+            logger.LogDebug($"{nameof(UpdateHeartbeat)} to {receivedAt} for Device with DeviceId {deviceId}");
 
-            DeviceReportingStatus current = store.GetValueOrDefault(deviceId);
+            DeviceReportingStatus current = GetDeviceStatus(deviceId);
             DeviceReportingStatus updated = current with { LastSeenAt = receivedAt };
             store[deviceId] = updated;
 
             return updated;
         }
 
-        DeviceReportingStatus IDeviceStatusStore.UpdateRegistration(int deviceId, DateTime receivedAt)
+        public DeviceReportingStatus UpdateRegistration(int deviceId, DateTime receivedAt)
         {
-            logger.LogDebug($"Update Registration to {receivedAt} for Device with DeviceId {deviceId}");
+            logger.LogDebug($"{nameof(UpdateRegistration)} to {receivedAt} for DeviceId {deviceId}");
 
-            DeviceReportingStatus current = store.GetValueOrDefault(deviceId);
+            DeviceReportingStatus current = GetDeviceStatus(deviceId);
             DateTime firstRegisterdAt = (current.FirstRegisteredAt != DateTime.MinValue) ? current.FirstRegisteredAt : receivedAt;
 
             DeviceReportingStatus updated = new(

@@ -7,18 +7,19 @@ using IoTAS.Shared.Hubs;
 namespace IoTAS.Server.InputQueue
 {
     /// <summary>
-    /// The Request record that gets queued on input from a Hubup 
+    /// The Request record that gets queued on input from (i.e. call to) a Hub method
     /// </summary>
-    public record Request(DateTime ReceivedAt, HubInArgs ReceivedData)
+    public record Request(DateTime ReceivedAt, string ConnectionId, HubInDto ReceivedData)
     {
         /// <summary>
-        /// Create a Request from an HubInArgs
+        /// Create a Request from an incoming Hub call
         /// </summary>
-        /// <param name="receivedData">The input hub event data</param>
+        /// <param name="connectionId">The incoming connectionId</param>
+        /// <param name="receivedData">The incoming hub event arguments</param>
         /// <returns>A Request record</returns>
-        public static Request FromInDTO(HubInArgs receivedData)
+        public static Request FromClientCall(string connectionId, HubInDto receivedData)
         {
-            return new Request(DateTime.Now, receivedData);
+            return new Request(DateTime.Now, connectionId, receivedData);
         }
     }  
 }

@@ -7,18 +7,18 @@ namespace IoTAS.Shared.Hubs
     /// Device Attributes that need to be passed to the Server
     /// during Device Registration.
     /// </summary>
-    public record DevToSrvDeviceRegistrationArgs(int DeviceId) : HubInArgs;
+    public record DevToSrvDeviceRegistrationDto(int DeviceId) : HubInDto;
     
 
     /// <summary>
     /// Device Attributes that need to be passed to the Server
     /// for a Device Heartbeat
     /// </summary>
-    public record DevToSrvDeviceHeartbeatArgs(int DeviceId) : HubInArgs;
+    public record DevToSrvDeviceHeartbeatDto(int DeviceId) : HubInDto;
 
 
     /// <summary>
-    /// Hub Interface provided by The server side to the Device Clients
+    /// Hub Interface provided by the Server side to the Device Clients
     /// </summary>
     /// <remarks>
     /// The parameters for the Hub methods are encapsulated in a operation
@@ -34,15 +34,15 @@ namespace IoTAS.Shared.Hubs
         /// <summary>
         /// Register a Device in the Server.
         /// </summary>
-        /// <param name="deviceRegistrationArgs">The Device's registration arguments</param>
+        /// <param name="deviceRegistrationDto">The Device's registration arguments</param>
         /// <returns>A Task</returns>
-        public Task RegisterDeviceAsync(DevToSrvDeviceRegistrationArgs deviceRegistrationArgs);
+        public Task RegisterDeviceClient(DevToSrvDeviceRegistrationDto deviceRegistrationDto);
 
         /// <summary>
-        /// HandleHeartbeatAsync message from a Device.   
+        /// ReceiveDeviceHeartbeat message from a Device.   
         /// </summary>
-        /// <param name="deviceHeartbeatArgs">The Device' heartbeat arguments</param>
+        /// <param name="deviceHeartbeatDto">The Device' heartbeat arguments</param>
         /// <returns>A Task</returns>
-        public Task HandleHeartbeatAsync(DevToSrvDeviceHeartbeatArgs deviceHeartbeatArgs);
+        public Task ReceiveDeviceHeartbeat(DevToSrvDeviceHeartbeatDto deviceHeartbeatDto);
     }
 }

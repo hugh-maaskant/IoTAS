@@ -43,6 +43,6 @@ namespace IoTAS.Server.DevicesStatusStore
         /// <param name="deviceId">The Id of the Device to update</param>
         /// <param name="receivedAt">The date and time the HHeartbeat was received</param>
         /// <returns>The new or updated <see cref="DeviceReportingStatus"/> record</returns>
-        public DeviceReportingStatus UpateHeartbeat(int deviceId, DateTime receivedAt);
+        public DeviceReportingStatus UpdateHeartbeat(int deviceId, DateTime receivedAt);
     }
 }

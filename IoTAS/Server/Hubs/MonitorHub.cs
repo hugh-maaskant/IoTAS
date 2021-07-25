@@ -43,30 +43,15 @@ namespace IoTAS.Server.Hubs
         }
 
 
-        public Task RegisterMonitorAsync(MonToSrvRegistrationArgs monitorRegistrationArgs)
+        public Task RegisterMonitorClient(MonToSrvRegistrationDto monitorRegistrationDto)
         {
             logger.LogInformation("Monitor registration received on Connection {ConnectionId}", Context.ConnectionId);
 
-            Request request = Request.FromInDTO(monitorRegistrationArgs);
+            Request request = Request.FromClientCall(Context.ConnectionId, monitorRegistrationDto);
 
             queueService.Enqueue(request);
 
             return Task.CompletedTask;
-        }
-
-        public async Task SendDeviceRegistration(SrvToMonDeviceStatusArgs args)
-        {
-            await Clients.All.DeviceRegistrationUpdate(args);
-        }
-
-        public async Task SendDeviceHeartbeat(SrvToMonDeviceHeartbeatArgs args)
-        {
-            await Clients.All.DeviceHeartBeatUpdate(args);
-        }
-
-        public async Task SendDeviceStatuses(string connectionId, SrvToMonDeviceStatusArgs[] argsList)
-        {
-            await Clients.Client(connectionId).DeviceStatusesReport(argsList);
         }
     }
 }
