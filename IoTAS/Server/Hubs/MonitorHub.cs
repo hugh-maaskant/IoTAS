@@ -53,5 +53,20 @@ namespace IoTAS.Server.Hubs
 
             return Task.CompletedTask;
         }
+
+        public async Task SendDeviceRegistration(SrvToMonDeviceStatusArgs args)
+        {
+            await Clients.All.DeviceRegistrationUpdate(args);
+        }
+
+        public async Task SendDeviceHeartbeat(SrvToMonDeviceHeartbeatArgs args)
+        {
+            await Clients.All.DeviceHeartBeatUpdate(args);
+        }
+
+        public async Task SendDeviceStatuses(string connectionId, SrvToMonDeviceStatusArgs[] argsList)
+        {
+            await Clients.Client(connectionId).DeviceStatusesReport(argsList);
+        }
     }
 }

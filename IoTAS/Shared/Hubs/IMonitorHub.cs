@@ -16,7 +16,6 @@ namespace IoTAS.Shared.Hubs
     public record SrvToMonDeviceStatusArgs
     (
         int      DeviceId,          // The Id of the Device
-        string   DeviceName,        // The human name for the Device
         DateTime FirstRegisteredAt, // The very first registration DateTime
         DateTime LastRegisteredAt,  // The most recent registration DateTime
         DateTime LastSeenAt         // The most recently seen registration or heartbeat DateTime
@@ -35,6 +34,13 @@ namespace IoTAS.Shared.Hubs
         public Task DeviceHeartBeatUpdate(SrvToMonDeviceHeartbeatArgs hearbeatArgs);
 
         /// <summary>
+        /// A message to notify Monitor(s) of a received DeviceRegistration
+        /// </summary>
+        /// <param name="statusAargs">The Device status attributes</param>
+        /// <returns>A Task</returns>
+        public Task DeviceRegistrationUpdate(SrvToMonDeviceStatusArgs statusAargs);
+
+        /// <summary>
         /// A message to inform a Monitor of the current Devices status
         /// </summary>
         /// <param name="statusArgsList">A List of Device status attributes</param>
@@ -46,6 +52,6 @@ namespace IoTAS.Shared.Hubs
         /// DeviceHearbeatUpdate until the comlete list with known Devices has 
         /// been sent.
         /// </remarks>
-        public Task DeviceStatusReport(SrvToMonDeviceStatusArgs[] statusAargssList);
+        public Task DeviceStatusesReport(SrvToMonDeviceStatusArgs[] statusAargssList);
     }
 }

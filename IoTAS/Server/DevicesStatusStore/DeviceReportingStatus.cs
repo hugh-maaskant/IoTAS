@@ -9,21 +9,18 @@ namespace IoTAS.Server.DevicesStatusStore
     /// Records the currently observed Device status, which is based on registrations 
     /// and heartbeat DeviceHub input received
     /// </summary>
-    internal record DeviceReportingStatus
+    public record DeviceReportingStatus
     (
-        /// <summary>
-        /// // The date and time of the very first registration
-        /// </summary>
+        // Also the key to the record
+        int DeviceId,
+
+        // The date and time of the very first registration
         DateTime FirstRegisteredAt,
 
-        /// <summary>
-        /// The date and time of most recent registration
-        /// </summary>
+        // The date and time of most recent registration
         DateTime LastRegisteredAt,
 
-        /// <summary>
-        /// The date and time of most recently seen registration or heartbeat
-        /// </summary>
+        // The date and time of most recently seen registration or heartbeat
         DateTime LastSeenAt
     );
 }

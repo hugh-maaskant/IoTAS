@@ -7,15 +7,16 @@ using Microsoft.Extensions.Logging;
 
 namespace IoTAS.Server.DevicesStatusStore
 {
-    internal class VolatileDeviceStatusStore : IDeviceStatusStore
+    public class VolatileDeviceStatusStore : IDeviceStatusStore
     {
         private readonly ILogger<VolatileDeviceStatusStore> logger;
 
         private readonly Dictionary<int, DeviceReportingStatus> store = new();
 
-        internal VolatileDeviceStatusStore(ILogger<VolatileDeviceStatusStore> logger)
+        public VolatileDeviceStatusStore(ILogger<VolatileDeviceStatusStore> logger)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            logger.LogInformation("Store created");
         }
 
         DeviceReportingStatus IDeviceStatusStore.GetDeviceStatus(int deviceId)
@@ -34,24 +35,35 @@ namespace IoTAS.Server.DevicesStatusStore
             return valuesCopy;
         }
 
-        void IDeviceStatusStore.UpateHeartbeat(int deviceId, DateTime receivedAt)
+        DeviceReportingStatus IDeviceStatusStore.UpateHeartbeat(int deviceId, DateTime receivedAt)
         {
             logger.LogDebug($"Update Heartbeat to {receivedAt} for Device with DeviceId {deviceId}");
 
             DeviceReportingStatus current = store.GetValueOrDefault(deviceId);
             DeviceReportingStatus updated = current with { LastSeenAt = receivedAt };
             store[deviceId] = updated;
+
+            return updated;
         }
 
-        void IDeviceStatusStore.UpdateRegistration(int deviceId, DateTime receivedAt)
+        DeviceReportingStatus IDeviceStatusStore.UpdateRegistration(int deviceId, DateTime receivedAt)
         {
             logger.LogDebug($"Update Registration to {receivedAt} for Device with DeviceId {deviceId}");
 
             DeviceReportingStatus current = store.GetValueOrDefault(deviceId);
-            DateTime firstRegisterdAt = (current.FirstRegisteredAt == DateTime.MinValue) ? receivedAt : current.FirstRegisteredAt;
+            DateTime firstRegisterdAt = (current.FirstRegisteredAt != DateTime.MinValue) ? current.FirstRegisteredAt : receivedAt;
 
-            DeviceReportingStatus updated = new( FirstRegisteredAt: firstRegisterdAt, LastRegisteredAt: receivedAt, LastSeenAt: receivedAt);
+            DeviceReportingStatus updated = new(
+                DeviceId: deviceId,
+                FirstRegisteredAt: firstRegisterdAt, 
+                LastRegisteredAt: receivedAt, 
+                LastSeenAt: receivedAt
+                );
             store[deviceId] = updated;
+
+            return updated;
         }
+
+        
     }
 }

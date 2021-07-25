@@ -11,6 +11,7 @@ using Serilog;
 
 using IoTAS.Shared.Hubs;
 using IoTAS.Server.InputQueue;
+using IoTAS.Server.DevicesStatusStore;
 
 namespace IoTAS.Server
 {
@@ -33,6 +34,7 @@ namespace IoTAS.Server
             services.AddSignalR();
 
             services.AddSingleton<IHubsInputQueueService, HubsInputQueueService>();
+            services.AddSingleton<IDeviceStatusStore, VolatileDeviceStatusStore>();
 
             services.AddHostedService<InputDispatcherHostedService>();
         }
