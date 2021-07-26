@@ -33,7 +33,8 @@ namespace IoTAS.Device
             int deviceId = GetDeviceId();
             if (deviceId != 0)
             {
-                SetupCntrlcHandler();
+                // Set up CNTRL-C handling to cancel out of blocking async operations
+                Console.CancelKeyPress += CntrlcHandler;
 
                 connection = new HubConnectionBuilder()
                     .WithUrl(hubUrl)
@@ -99,18 +100,29 @@ namespace IoTAS.Device
         }
 
         /// <summary>
-        /// Sets the Cntrl-C and Cntrl-Break handler to canvel the tokenSource, 
+        /// The Cntrl-C (and Cntrl-Break) handler cancels the tokenSource, 
         /// which will then gracefully shut down the program.
         /// </summary>
-        private static void SetupCntrlcHandler()
+        private static ConsoleCancelEventHandler CntrlcHandler = (sender, eventArgs) =>
         {
-            Console.CancelKeyPress += (sender, eventArgs) =>
+            Console.WriteLine("Cancelling due to Cntrl-C ...");
+            
+            try
             {
-                Console.WriteLine("Cancelling due to Cntrl-C ...");
+                // Remove ourselves ...
+                Console.CancelKeyPress -= CntrlcHandler;
+
                 tokenSource.Cancel();
-                eventArgs.Cancel = true;    // continue running
-            };
-        }
+
+                // continue running to clean up
+                eventArgs.Cancel = true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception while cancelling: ", e);
+                throw;
+            }
+        };
 
         #endregion  UserInteraction
 
@@ -310,8 +322,15 @@ namespace IoTAS.Device
                 // Send the heartbeat; in case of cancellation: end the Task
                 try
                 {
-                    await connection.InvokeAsync(nameof(IDeviceHubServer.ReceiveDeviceHeartbeat), dto, token);
-                    Console.WriteLine($"{nameof(SendHeartbeatAsync)} {heartbeatNumber} succeded");
+                    if (connection.State == HubConnectionState.Connected)
+                    {
+                        await connection.InvokeAsync(nameof(IDeviceHubServer.ReceiveDeviceHeartbeat), dto, token);
+                        Console.WriteLine($"{nameof(SendHeartbeatAsync)} {heartbeatNumber} succeded");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{nameof(SendHeartbeatAsync)} {heartbeatNumber} skipped (no connection)");
+                    }
                 }
                 catch (TaskCanceledException)
                 {
