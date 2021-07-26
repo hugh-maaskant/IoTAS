@@ -25,27 +25,43 @@ namespace IoTAS.Server.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            logger.LogInformation("Monitor connected with ConnectionId {ConnectionId}", Context.ConnectionId);
+            logger.LogInformation(
+                nameof(OnConnectedAsync) +
+                "Monitor connected on Connection {ConnectionId}",
+                Context.ConnectionId);
+
             await base.OnConnectedAsync();
         }
 
-        public override async Task OnDisconnectedAsync(Exception exception)
+        public override async Task OnDisconnectedAsync(Exception e)
         {
-            if (exception == null)
+            if (e == null)
             {
-                logger.LogInformation("Monitor with ConnectionId {ConnectionId} disconnected", Context.ConnectionId);
+                // It's OK for Monitors to go awai from their web-page
+                logger.LogInformation(
+                    nameof(OnDisconnectedAsync) +
+                    "Monitor on Connection {ConnectionId} disconnected", 
+                    Context.ConnectionId);
             }
             else
             {
-                logger.LogWarning(exception, "Monitor disconnected with exception");
+                logger.LogError(
+                    e,
+                    "Monitor on Connection {ConnectionId} disconnected with exception", 
+                    Context.ConnectionId);
             }
-            await base.OnDisconnectedAsync(exception);
+            await base.OnDisconnectedAsync(e);
         }
 
-
+        //
+        // Called by the Hub on behalf of the Monitor Client call ...
+        //
         public Task RegisterMonitorClient(MonToSrvRegistrationDto monitorRegistrationDto)
         {
-            logger.LogInformation("Monitor registration received on Connection {ConnectionId}", Context.ConnectionId);
+            logger.LogInformation(
+                nameof(RegisterMonitorClient) +
+                "Monitor registration received on Connection {ConnectionId}",
+                Context.ConnectionId);
 
             Request request = Request.FromClientCall(Context.ConnectionId, monitorRegistrationDto);
 

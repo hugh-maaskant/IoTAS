@@ -24,7 +24,9 @@ namespace IoTAS.Server.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            logger.LogInformation("Device connected with ConnectionId {ConnectionId}", Context.ConnectionId);
+            logger.LogInformation(
+                nameof(OnConnectedAsync) +
+                "Device connected on ConnectionId {ConnectionId}", Context.ConnectionId);
             await base.OnConnectedAsync();
         }
 
@@ -32,33 +34,44 @@ namespace IoTAS.Server.Hubs
         {
             if (exception == null)
             {
-                logger.LogWarning("Device with ConnectionId {ConnectionId} disconnected", Context.ConnectionId);
+                logger.LogWarning(
+                    nameof(OnDisconnectedAsync) +
+                    "Device on ConnectionId {ConnectionId} disconnected", 
+                    Context.ConnectionId);
             }
             else
             {
-                logger.LogError(exception, "Device disconnected with exception");
+                logger.LogError(
+                    exception,
+                    nameof(OnDisconnectedAsync) + 
+                    "Device on ConnectionId {ConnectionId} disconnected", 
+                    Context.ConnectionId);
             }
             await base.OnDisconnectedAsync(exception);
         }
 
-        public Task RegisterDeviceClient(DevToSrvDeviceRegistrationDto deviceRegistrationAttributes)
+        public Task RegisterDeviceClient(DevToSrvDeviceRegistrationDto dto)
         {
-            logger.LogInformation("Device registration received from Device with DeviceId {DeviceId} on Connection {ConnectionId}",
-                                   deviceRegistrationAttributes.DeviceId, Context.ConnectionId);
+            logger.LogInformation(
+                nameof(RegisterDeviceClient) +
+                "Device registration received from Device {DeviceId} on Connection {ConnectionId}",
+                dto.DeviceId, Context.ConnectionId);
 
-            Request request = Request.FromClientCall(Context.ConnectionId, deviceRegistrationAttributes);
+            Request request = Request.FromClientCall(Context.ConnectionId, dto);
 
             queueService.Enqueue(request);
 
             return Task.CompletedTask;
         }
 
-        public Task ReceiveDeviceHeartbeat(DevToSrvDeviceHeartbeatDto deviceHeartbeatAttributes)
+        public Task ReceiveDeviceHeartbeat(DevToSrvDeviceHeartbeatDto dto)
         {
-            logger.LogInformation("ReceiveDeviceHeartbeat received from Device with DeviceId {DeviceId} on Connection {ConnectionId}", 
-                                   deviceHeartbeatAttributes.DeviceId, Context.ConnectionId);
+            logger.LogInformation(
+                nameof(ReceiveDeviceHeartbeat) +
+                "Heartbeat received from DeviceId {DeviceId} on Connection {ConnectionId}", 
+                dto.DeviceId, Context.ConnectionId);
 
-            Request request = Request.FromClientCall(Context.ConnectionId, deviceHeartbeatAttributes);
+            Request request = Request.FromClientCall(Context.ConnectionId, dto);
 
             queueService.Enqueue(request);
             return Task.CompletedTask; ;
