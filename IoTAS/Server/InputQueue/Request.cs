@@ -9,6 +9,9 @@ namespace IoTAS.Server.InputQueue
     /// <summary>
     /// The Request record that gets queued on input from (i.e. call to) a Hub method
     /// </summary>
+    /// <remarks>
+    /// The Request record contains any and all information needed to process the request
+    /// </remarks>
     public record Request(DateTime ReceivedAt, string ConnectionId, HubInDto ReceivedData)
     {
         /// <summary>
