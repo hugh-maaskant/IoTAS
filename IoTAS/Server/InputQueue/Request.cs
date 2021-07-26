@@ -12,17 +12,17 @@ namespace IoTAS.Server.InputQueue
     /// <remarks>
     /// The Request record contains any and all information needed to process the request
     /// </remarks>
-    public record Request(DateTime ReceivedAt, string ConnectionId, HubInDto ReceivedData)
+    public record Request(DateTime ReceivedAt, string ConnectionId, HubInDto ReceivedDto)
     {
         /// <summary>
         /// Create a Request from an incoming Hub call
         /// </summary>
         /// <param name="connectionId">The incoming connectionId</param>
-        /// <param name="receivedData">The incoming hub event arguments</param>
+        /// <param name="receivedDto">The incoming hub DTO</param>
         /// <returns>A Request record</returns>
-        public static Request FromClientCall(string connectionId, HubInDto receivedData)
+        public static Request FromClientCall(string connectionId, HubInDto receivedDto)
         {
-            return new Request(DateTime.Now, connectionId, receivedData);
+            return new Request(DateTime.Now, connectionId, receivedDto);
         }
     }  
 }

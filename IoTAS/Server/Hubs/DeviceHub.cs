@@ -14,6 +14,7 @@ namespace IoTAS.Server.Hubs
     public class DeviceHub : Hub<IDeviceHub>, IDeviceHubServer
     {
         private readonly ILogger<DeviceHub> logger;
+
         private readonly IHubsInputQueueService queueService;
 
         public DeviceHub(ILogger<DeviceHub> logger, IHubsInputQueueService queueService)
@@ -26,7 +27,9 @@ namespace IoTAS.Server.Hubs
         {
             logger.LogInformation(
                 nameof(OnConnectedAsync) + " - " +
-                "Device connected on ConnectionId {ConnectionId}", Context.ConnectionId);
+                "Device connected on ConnectionId {ConnectionId}", 
+                Context.ConnectionId);
+
             await base.OnConnectedAsync();
         }
 
@@ -50,30 +53,31 @@ namespace IoTAS.Server.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public Task RegisterDeviceClient(DevToSrvDeviceRegistrationDto dto)
+        public Task RegisterDeviceClient(DevToSrvDeviceRegistrationDto dtoIn)
         {
             logger.LogInformation(
                 nameof(RegisterDeviceClient) + " - " +
-                "Device registration received from Device {DeviceId} on Connection {ConnectionId}",
-                dto.DeviceId, Context.ConnectionId);
+                "Device registration received from Device {DeviceId} on ConnectionId {ConnectionId}",
+                dtoIn.DeviceId, Context.ConnectionId);
 
-            Request request = Request.FromClientCall(Context.ConnectionId, dto);
+            Request request = Request.FromClientCall(Context.ConnectionId, dtoIn);
 
             queueService.Enqueue(request);
 
             return Task.CompletedTask;
         }
 
-        public Task ReceiveDeviceHeartbeat(DevToSrvDeviceHeartbeatDto dto)
+        public Task ReceiveDeviceHeartbeat(DevToSrvDeviceHeartbeatDto dtoIn)
         {
             logger.LogInformation(
                 nameof(ReceiveDeviceHeartbeat) + " - " +
-                "Heartbeat received from DeviceId {DeviceId} on Connection {ConnectionId}", 
-                dto.DeviceId, Context.ConnectionId);
+                "Heartbeat received from DeviceId {DeviceId} on ConnectionId {ConnectionId}", 
+                dtoIn.DeviceId, Context.ConnectionId);
 
-            Request request = Request.FromClientCall(Context.ConnectionId, dto);
+            Request request = Request.FromClientCall(Context.ConnectionId, dtoIn);
 
             queueService.Enqueue(request);
+
             return Task.CompletedTask; ;
         }        
     }

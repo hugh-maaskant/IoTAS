@@ -24,15 +24,9 @@ namespace IoTAS.Shared.Hubs
     /// Hub Interface provided by The server side to the Monitor Clients
     /// </summary>
     /// <remarks>
-    /// <para>
     /// The parameters for the Hub methods are encapsulated in a operation
     /// specific record type so that the interface can relatively easily
     /// be extended.
-    /// </para>
-    /// The real calling code can not be implemented with this interface as
-    /// there currently is no method to generate Hub stubs and proxies 
-    /// automatically from an interface definition. 
-    /// But this still aids in documentation.
     /// </remarks>
     public interface IMonitorHubServer
     {
@@ -44,9 +38,9 @@ namespace IoTAS.Shared.Hubs
         /// <summary>
         /// Register a Monitor Client in the Server.
         /// </summary>
-        /// <param name="monitorRegistrationDto"></param>
+        /// <param name="dtoIn">The received DTA as passed by SignalR</param>
         /// <returns>A Task</returns>
-        Task RegisterMonitorClient(MonToSrvRegistrationDto monitorRegistrationDto);
+        Task RegisterMonitorClient(MonToSrvRegistrationDto dtoIn);
 
     }
 }

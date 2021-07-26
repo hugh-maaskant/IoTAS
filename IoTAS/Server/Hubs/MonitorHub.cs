@@ -27,7 +27,7 @@ namespace IoTAS.Server.Hubs
         {
             logger.LogInformation(
                 nameof(OnConnectedAsync) + " - " +
-                "Monitor connected on Connection {ConnectionId}",
+                "Monitor connected on ConnectionId {ConnectionId}",
                 Context.ConnectionId);
 
             await base.OnConnectedAsync();
@@ -40,7 +40,7 @@ namespace IoTAS.Server.Hubs
                 // It's OK for Monitors to go awai from their web-page
                 logger.LogInformation(
                     nameof(OnDisconnectedAsync) + " - " +
-                    "Monitor on Connection {ConnectionId} disconnected", 
+                    "Monitor on ConnectionId {ConnectionId} disconnected", 
                     Context.ConnectionId);
             }
             else
@@ -48,7 +48,7 @@ namespace IoTAS.Server.Hubs
                 logger.LogError(
                     e,
                     nameof(OnDisconnectedAsync) + " - " +
-                    "Monitor on Connection {ConnectionId} disconnected with exception", 
+                    "Monitor on ConnectionId {ConnectionId} disconnected with exception", 
                     Context.ConnectionId);
             }
             await base.OnDisconnectedAsync(e);
@@ -61,7 +61,7 @@ namespace IoTAS.Server.Hubs
         {
             logger.LogInformation(
                 nameof(RegisterMonitorClient) + " - " +
-                "Monitor registration received on Connection {ConnectionId}",
+                "Monitor registration received on ConnectionId {ConnectionId}",
                 Context.ConnectionId);
 
             Request request = Request.FromClientCall(Context.ConnectionId, monitorRegistrationDto);

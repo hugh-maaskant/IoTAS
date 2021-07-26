@@ -34,15 +34,15 @@ namespace IoTAS.Shared.Hubs
         /// <summary>
         /// Register a Device in the Server.
         /// </summary>
-        /// <param name="deviceRegistrationDto">The Device's registration arguments</param>
+        /// <param name="dtoIn">The Device's registration parameters</param>
         /// <returns>A Task</returns>
-        public Task RegisterDeviceClient(DevToSrvDeviceRegistrationDto deviceRegistrationDto);
+        public Task RegisterDeviceClient(DevToSrvDeviceRegistrationDto dtoIn);
 
         /// <summary>
         /// ReceiveDeviceHeartbeat message from a Device.   
         /// </summary>
-        /// <param name="deviceHeartbeatDto">The Device' heartbeat arguments</param>
+        /// <param name="dtoIn">The Device's heartbeat parameters</param>
         /// <returns>A Task</returns>
-        public Task ReceiveDeviceHeartbeat(DevToSrvDeviceHeartbeatDto deviceHeartbeatDto);
+        public Task ReceiveDeviceHeartbeat(DevToSrvDeviceHeartbeatDto dtoIn);
     }
 }

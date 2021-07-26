@@ -28,6 +28,7 @@ namespace IoTAS.Server.InputQueue
         public HubsInputQueueService(ILogger<HubsInputQueueService> logger)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
             this.logger.LogInformation("Created");
         }
 
@@ -37,20 +38,33 @@ namespace IoTAS.Server.InputQueue
         /// <param name="request">The Request to enqueue</param>
         public void Enqueue(Request request)
         {
-            logger.LogDebug("Enqueueing");
+            logger.LogDebug(
+                nameof(Enqueue) + " - " +
+                "Enqueueing {Request}", 
+                request);
+
+            // needed to avoid race condition in reporting ...
+            int maxItemsToLog;
 
             lock (lockObj)
             {
                 requestsQueue.Enqueue(request);
+
                 maxItemsQueued = Math.Max(maxItemsQueued, requestsQueue.Count);
+                maxItemsToLog = maxItemsQueued;
             }
 
             proceedSem.Release();
 
-            if (maxItemsQueued > maxItemsLogged)
+            if (maxItemsToLog > maxItemsLogged)
             {
-                logger.LogInformation($"maxItemsQueued reached: {maxItemsQueued}");
-                maxItemsLogged = maxItemsQueued;
+                logger.LogInformation(
+                    nameof(Enqueue) + " - " +
+                    nameof(maxItemsQueued) +
+                    " reached: {MaxItemsQueued}",
+                    maxItemsToLog);
+
+                maxItemsLogged = maxItemsToLog;
             }
         }
 
@@ -65,7 +79,9 @@ namespace IoTAS.Server.InputQueue
             {
                 await proceedSem.WaitAsync(token);
 
-                logger.LogDebug("Dequeueing");
+                logger.LogDebug(
+                    nameof(DequeueAsync) + " - " +
+                    "Dequeueing");
 
                 lock (lockObj)
                 {
@@ -75,12 +91,17 @@ namespace IoTAS.Server.InputQueue
             }
             catch (OperationCanceledException e)
             {
-                logger.LogWarning("Dequeue - Wait operation cancelled", e);
+                logger.LogWarning(
+                    nameof(DequeueAsync) + " - " +
+                    "Wait operation cancelled", e);
                 throw;
             }
             catch (Exception e)
             {
-                logger.LogError("Dequeue - Wait operation exception", e);
+                logger.LogError(
+                    e, 
+                    nameof(DequeueAsync) + " - " + 
+                    "Wait operation exception");
                 throw;
             }
         }
@@ -88,7 +109,10 @@ namespace IoTAS.Server.InputQueue
         public void Dispose()
         {
             proceedSem?.Dispose();
-            logger.LogInformation("Disposed");
+
+            logger.LogInformation(
+                nameof(Dispose) + " - " +
+                "Disposed ...");
         }
     }
 }

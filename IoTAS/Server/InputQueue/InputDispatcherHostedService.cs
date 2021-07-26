@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -41,7 +42,9 @@ namespace IoTAS.Server.InputQueue
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            logger.LogInformation("Starting async execution");
+            logger.LogInformation(
+                nameof(ExecuteAsync) + " - " +
+                "Starting Async execution");
 
             bool fatalError = false;
 
@@ -49,114 +52,149 @@ namespace IoTAS.Server.InputQueue
             {
                 try
                 {
-                    logger.LogDebug("Waiting for request ...");
+                    logger.LogDebug(
+                        nameof(ExecuteAsync) + " - " +
+                        "Waiting for request ...");
+                    
                     Request request = await inputQueue.DequeueAsync(stoppingToken);
-                    logger.LogDebug($"Retrieved request {request}");
+                    
+                    logger.LogDebug(
+                        nameof(ExecuteAsync) + " - " +
+                        "Retrieved {Request}",
+                        request);
 
                     await DispatchRequest(request);
                 }
                 catch (OperationCanceledException e)
                 {
-                    logger.LogWarning("Cancellation requested - exiting", e);
+                    logger.LogWarning(
+                        e,
+                        nameof(ExecuteAsync) + " - " +
+                        "Cancellation requested - EXITING");
                 }
                 catch (Exception e)
                 {
-                    logger.LogError("Error dequeueng request - exiting", e);
+                    logger.LogError(
+                        e,
+                        nameof(ExecuteAsync) + " - " + 
+                        "Error dequeueng request - EXITING");
                     fatalError = true; ;
                 }
             }
 
-            logger.LogWarning($"Execution stopped fatalError = {fatalError}, cancellation rquested = {stoppingToken.IsCancellationRequested}");
+            logger.LogWarning(
+                nameof(ExecuteAsync) + " - " +
+                $"Execution stopped fatalError = {fatalError}, cancellation rquested = {stoppingToken.IsCancellationRequested}");
         }
 
         private async Task DispatchRequest(Request request)
         {
             if (request is null)
             {
-                logger.LogWarning($"{nameof(DispatchRequest)} called with request == null");
+                logger.LogWarning(
+                    nameof(DispatchRequest) + " - " +
+                    "Called with request == null");
+                
                 return;
             }
 
-            logger.LogInformation($"Dispatching {request}");
+            logger.LogInformation(
+                nameof(DispatchRequest) + " - " + 
+                "Dispatching {Request}",
+                request);
 
-            switch (request.ReceivedData)
+            switch (request.ReceivedDto)
             {
                 case DevToSrvDeviceRegistrationDto:
                     await HandleDeviceRegistration(request);
                     break;
+
                 case DevToSrvDeviceHeartbeatDto:
                     await HandleDeviceHeartbeat(request);
                     break;
+
                 case MonToSrvRegistrationDto:
                     await HandleMonitorRegistration(request);
                     break;
+
                 default:
-                    logger.LogError($"Unknown request type : {request}");
+                    logger.LogError(
+                        nameof(DispatchRequest) + " - " +
+                        "Unknown request.ReceivedDto type : {Request}",
+                        request);
                     break;
             }
         }
 
         private async Task HandleDeviceRegistration(Request request)
         {
-            var args = request.ReceivedData as DevToSrvDeviceRegistrationDto;
+            Debug.Assert(
+                request.ReceivedDto is DevToSrvDeviceRegistrationDto,
+                $"{nameof(HandleDeviceRegistration)} request.ReceivedData is not {nameof(DevToSrvDeviceRegistrationDto)}");
 
-            if (args is null)
-            {
-                logger.LogError($"{nameof(HandleDeviceRegistration)} - Request is not {nameof(DevToSrvDeviceRegistrationDto)}: {request}");
-                return;
-            }
+            var dtoIn = (DevToSrvDeviceRegistrationDto)request.ReceivedDto;
 
-            logger.LogDebug($"{nameof(HandleDeviceRegistration)} handling {request} ...");
+            logger.LogDebug(
+                nameof(HandleDeviceRegistration) + " - " +
+                "Handling {Request}",
+                request);
 
-            DeviceReportingStatus status = store.UpdateRegistration(args.DeviceId, request.ReceivedAt);
-            var dto = ConvertToStatusDto(status);
-            await monitorHub.Clients.All.ReceiveDeviceRegistrationUpdate(dto);
+            DeviceReportingStatus status = store.UpdateRegistration(dtoIn.DeviceId, request.ReceivedAt);
+            var dtoOut = ConvertToStatusDto(status);
+            await monitorHub.Clients.All.ReceiveDeviceRegistrationUpdate(dtoOut);
 
-            logger.LogDebug($"{nameof(HandleDeviceRegistration)} handling {request} done");
-
+            logger.LogDebug(
+                nameof(HandleDeviceRegistration) + " - " +
+                "Handled {Request}",
+                request);
         }
-
 
         private async Task HandleDeviceHeartbeat(Request request)
         {
-            var args = request.ReceivedData as DevToSrvDeviceHeartbeatDto;
+            Debug.Assert(
+                request.ReceivedDto is DevToSrvDeviceHeartbeatDto,
+                $"{nameof(HandleDeviceHeartbeat)} request.ReceivedData is not {nameof(DevToSrvDeviceHeartbeatDto)}");
 
-            if (args is null)
-            {
-                logger.LogError($"{nameof(HandleDeviceHeartbeat)} - Request is not {nameof(DevToSrvDeviceHeartbeatDto)}: {request}");
-                return;
-            }
+            var dtoIn = (DevToSrvDeviceHeartbeatDto)request.ReceivedDto;
 
-            logger.LogDebug($"{nameof(HandleDeviceHeartbeat)} handling {request} ...");
+            logger.LogDebug(
+                nameof(HandleDeviceHeartbeat) + " - " +
+                "Handling {Request}",
+                request);
 
-            DeviceReportingStatus status = store.UpdateHeartbeat(args.DeviceId, request.ReceivedAt);
-            var dto = ConvertToHeartbeatDto(status);
-            await monitorHub.Clients.All.ReceiveDeviceHeartbeatUpdate(dto);
+            DeviceReportingStatus status = store.UpdateHeartbeat(dtoIn.DeviceId, request.ReceivedAt);
+            var dtoOut = ConvertToHeartbeatDto(status);
+            await monitorHub.Clients.All.ReceiveDeviceHeartbeatUpdate(dtoOut);
 
-            logger.LogDebug($"{nameof(HandleDeviceHeartbeat)} handling {request} done");
-
+            logger.LogDebug(
+                nameof(HandleDeviceHeartbeat) + " - " +
+                "Handled {Request}",
+                request);
         }
 
         private async Task HandleMonitorRegistration(Request request)
         {
-            var args = request.ReceivedData as MonToSrvRegistrationDto;
+            Debug.Assert(
+                request.ReceivedDto is MonToSrvRegistrationDto,
+                $"{nameof(HandleMonitorRegistration)} request.ReceivedData is not {nameof(MonToSrvRegistrationDto)}");
 
-            if (args is null)
-            {
-                logger.LogError($"{nameof(HandleMonitorRegistration)} - Request is not {nameof(MonToSrvRegistrationDto)}: {request}");
-                return;
-            }
+            var dtoIn = (MonToSrvRegistrationDto)request.ReceivedDto;
 
+            logger.LogDebug(
+                nameof(HandleMonitorRegistration) + " - " +
+                "Handling {Request}",
+                request);
 
-            logger.LogDebug($"{nameof(HandleMonitorRegistration)} handling {request} ...");
-
-            var dto = store.GetDeviceStatuses()
+            var dtoOut = store.GetDeviceStatuses()
                 .Select(status => ConvertToStatusDto(status))
                 .ToArray();
 
-            await monitorHub.Clients.Client(request.ConnectionId).ReceiveDeviceStatusesReport(dto);
+            await monitorHub.Clients.Client(request.ConnectionId).ReceiveDeviceStatusesReport(dtoOut);
 
-            logger.LogDebug($"{nameof(HandleMonitorRegistration)} handling {request} done");
+            logger.LogDebug(
+                nameof(HandleMonitorRegistration) + " - " +
+                "Handled {Request}",
+                request);
         }
 
         private readonly Func<DeviceReportingStatus, SrvToMonDeviceHeartbeatDto> ConvertToHeartbeatDto =
