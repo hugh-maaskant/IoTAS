@@ -26,7 +26,7 @@ namespace IoTAS.Server.Hubs
         public override async Task OnConnectedAsync()
         {
             logger.LogInformation(
-                nameof(OnConnectedAsync) +
+                nameof(OnConnectedAsync) + " - " +
                 "Monitor connected on Connection {ConnectionId}",
                 Context.ConnectionId);
 
@@ -39,7 +39,7 @@ namespace IoTAS.Server.Hubs
             {
                 // It's OK for Monitors to go awai from their web-page
                 logger.LogInformation(
-                    nameof(OnDisconnectedAsync) +
+                    nameof(OnDisconnectedAsync) + " - " +
                     "Monitor on Connection {ConnectionId} disconnected", 
                     Context.ConnectionId);
             }
@@ -47,6 +47,7 @@ namespace IoTAS.Server.Hubs
             {
                 logger.LogError(
                     e,
+                    nameof(OnDisconnectedAsync) + " - " +
                     "Monitor on Connection {ConnectionId} disconnected with exception", 
                     Context.ConnectionId);
             }
@@ -59,7 +60,7 @@ namespace IoTAS.Server.Hubs
         public Task RegisterMonitorClient(MonToSrvRegistrationDto monitorRegistrationDto)
         {
             logger.LogInformation(
-                nameof(RegisterMonitorClient) +
+                nameof(RegisterMonitorClient) + " - " +
                 "Monitor registration received on Connection {ConnectionId}",
                 Context.ConnectionId);
 

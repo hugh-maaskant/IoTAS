@@ -25,7 +25,7 @@ namespace IoTAS.Server.Hubs
         public override async Task OnConnectedAsync()
         {
             logger.LogInformation(
-                nameof(OnConnectedAsync) +
+                nameof(OnConnectedAsync) + " - " +
                 "Device connected on ConnectionId {ConnectionId}", Context.ConnectionId);
             await base.OnConnectedAsync();
         }
@@ -35,7 +35,7 @@ namespace IoTAS.Server.Hubs
             if (exception == null)
             {
                 logger.LogWarning(
-                    nameof(OnDisconnectedAsync) +
+                    nameof(OnDisconnectedAsync) +" - " +
                     "Device on ConnectionId {ConnectionId} disconnected", 
                     Context.ConnectionId);
             }
@@ -43,7 +43,7 @@ namespace IoTAS.Server.Hubs
             {
                 logger.LogError(
                     exception,
-                    nameof(OnDisconnectedAsync) + 
+                    nameof(OnDisconnectedAsync) + " - " + 
                     "Device on ConnectionId {ConnectionId} disconnected", 
                     Context.ConnectionId);
             }
@@ -53,7 +53,7 @@ namespace IoTAS.Server.Hubs
         public Task RegisterDeviceClient(DevToSrvDeviceRegistrationDto dto)
         {
             logger.LogInformation(
-                nameof(RegisterDeviceClient) +
+                nameof(RegisterDeviceClient) + " - " +
                 "Device registration received from Device {DeviceId} on Connection {ConnectionId}",
                 dto.DeviceId, Context.ConnectionId);
 
@@ -67,7 +67,7 @@ namespace IoTAS.Server.Hubs
         public Task ReceiveDeviceHeartbeat(DevToSrvDeviceHeartbeatDto dto)
         {
             logger.LogInformation(
-                nameof(ReceiveDeviceHeartbeat) +
+                nameof(ReceiveDeviceHeartbeat) + " - " +
                 "Heartbeat received from DeviceId {DeviceId} on Connection {ConnectionId}", 
                 dto.DeviceId, Context.ConnectionId);
 
