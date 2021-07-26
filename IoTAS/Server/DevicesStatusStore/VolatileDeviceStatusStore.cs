@@ -27,7 +27,7 @@ namespace IoTAS.Server.DevicesStatusStore
         {
             logger.LogDebug(
                 nameof(GetDeviceStatus) + " - " +
-                "Getting DeviceReportingStatus for Device {DeviceId}",
+                "Getting DeviceReportingStatus for Device DeviceId}",
                 deviceId);
 
             if (store.GetValueOrDefault(deviceId) is DeviceReportingStatus status)
@@ -35,7 +35,13 @@ namespace IoTAS.Server.DevicesStatusStore
                 return status;
             }
 
-            logger.LogWarning($"{nameof(GetDeviceStatus)} attempted to retrieve a non-existing {nameof(DeviceReportingStatus)} for DeviceId {deviceId}");
+            logger.LogWarning(
+                nameof(GetDeviceStatus) + " - " +
+                "Attempt to retrieve a non-existing " +
+                $"{nameof(DeviceReportingStatus)}" +
+                " for Device {DeviceId}",
+                deviceId);
+
             return new(deviceId, default, default, default);
         }
 
