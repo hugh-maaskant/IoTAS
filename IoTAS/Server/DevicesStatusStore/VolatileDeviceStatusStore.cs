@@ -7,6 +7,9 @@ using Microsoft.Extensions.Logging;
 
 namespace IoTAS.Server.DevicesStatusStore
 {
+    /// <summary>
+    /// Volatile (in memmory) implementation for IDeviceStatusStore
+    /// </summary>
     public class VolatileDeviceStatusStore : IDeviceStatusStore
     {
         private readonly ILogger<VolatileDeviceStatusStore> logger;
@@ -16,12 +19,17 @@ namespace IoTAS.Server.DevicesStatusStore
         public VolatileDeviceStatusStore(ILogger<VolatileDeviceStatusStore> logger)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
             logger.LogInformation("Store created");
         }
 
         public DeviceReportingStatus GetDeviceStatus(int deviceId)
         {
-            logger.LogDebug($"Getting DeviceReportingStatus for Device with DeviceId {deviceId}");
+            logger.LogDebug(
+                nameof(GetDeviceStatus) + " - " +
+                "Getting DeviceReportingStatus for Device {DeviceId}",
+                deviceId);
+
             if (store.GetValueOrDefault(deviceId) is DeviceReportingStatus status)
             {
                 return status;
@@ -34,19 +42,35 @@ namespace IoTAS.Server.DevicesStatusStore
         public IEnumerable<DeviceReportingStatus> GetDeviceStatuses()
         {
             var values = store.Values;
-            logger.LogDebug($"{nameof(GetDeviceStatuses)} for all {values.Count} Devices");
+
+            logger.LogDebug(
+                nameof(GetDeviceStatuses) + " - " +
+                "Get Reporting Status for all {DevicesCount} Devices",
+                values.Count);
             
             DeviceReportingStatus[] valuesCopy = new DeviceReportingStatus[values.Count];
             values.CopyTo(valuesCopy, 0);
+            
             return valuesCopy;
         }
 
         public DeviceReportingStatus UpdateHeartbeat(int deviceId, DateTime receivedAt)
         {
-            logger.LogDebug($"{nameof(UpdateHeartbeat)} to {receivedAt} for Device with DeviceId {deviceId}");
+            logger.LogDebug(
+                nameof(UpdateHeartbeat) + " - " +
+                "Heartbeat at {ReceivedAt} for Device {DeviceId}",
+                receivedAt, deviceId);
 
-            DeviceReportingStatus current = GetDeviceStatus(deviceId);
-            DeviceReportingStatus updated = current with { LastSeenAt = receivedAt };
+            DeviceReportingStatus current = 
+                store.ContainsKey(deviceId) 
+                ? GetDeviceStatus(deviceId) 
+                : new(deviceId, default, default, default);
+
+            DeviceReportingStatus updated = current with 
+            { 
+                LastSeenAt = receivedAt 
+            };
+            
             store[deviceId] = updated;
 
             return updated;
@@ -54,17 +78,22 @@ namespace IoTAS.Server.DevicesStatusStore
 
         public DeviceReportingStatus UpdateRegistration(int deviceId, DateTime receivedAt)
         {
-            logger.LogDebug($"{nameof(UpdateRegistration)} to {receivedAt} for DeviceId {deviceId}");
+            logger.LogDebug(
+                nameof(UpdateRegistration) + " - " +
+                "Registration at {ReceivedAt} for Device {DeviceId}",
+                receivedAt, deviceId);
 
-            DeviceReportingStatus current = GetDeviceStatus(deviceId);
-            DateTime firstRegisterdAt = (current.FirstRegisteredAt != DateTime.MinValue) ? current.FirstRegisteredAt : receivedAt;
+            DeviceReportingStatus current =
+                store.ContainsKey(deviceId)
+                ? GetDeviceStatus(deviceId)  
+                : new(deviceId, receivedAt, default, default);
 
-            DeviceReportingStatus updated = new(
-                DeviceId: deviceId,
-                FirstRegisteredAt: firstRegisterdAt, 
-                LastRegisteredAt: receivedAt, 
-                LastSeenAt: receivedAt
-                );
+            DeviceReportingStatus updated = current with
+            {
+                LastRegisteredAt = receivedAt,
+                LastSeenAt = receivedAt
+            };
+
             store[deviceId] = updated;
 
             return updated;
