@@ -6,8 +6,8 @@ namespace IoTAS.Shared.Hubs
     /// Marker base record for Hub input and connection Event records from
     /// Clients (devices and Monitors) to the Server's SignalR Hubs
     /// </summary>
-    public abstract record HubInDto
+    public abstract record BaseHubInDto
     {
-        // Empty marker base recordd
+        // Empty marker base record
     }
 }

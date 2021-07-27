@@ -11,13 +11,16 @@ using IoTAS.Server.InputQueue;
 
 namespace IoTAS.Server.Hubs
 {
+    /// <summary>
+    /// Typesafe SignalR Hub for Monitor Clients
+    /// </summary>
     public class MonitorHub : Hub<IMonitorHub>, IMonitorHubServer
     {
         private readonly ILogger<IMonitorHub> logger;
 
-        private readonly IHubsInputQueueService queueService;
+        private readonly IHubsInputQueue queueService;
 
-        public MonitorHub(ILogger<IMonitorHub> logger, IHubsInputQueueService queueService)
+        public MonitorHub(ILogger<IMonitorHub> logger, IHubsInputQueue queueService)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));

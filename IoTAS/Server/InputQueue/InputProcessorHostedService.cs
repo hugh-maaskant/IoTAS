@@ -16,27 +16,32 @@ using IoTAS.Server.DevicesStatusStore;
 
 namespace IoTAS.Server.InputQueue
 {
-    public sealed class InputDispatcherHostedService : BackgroundService
+    /// <summary>
+    /// Gets Requests from the HubsInputQueue, stores the Device's Registration and 
+    /// Heartbeat data in the InputQueue, and dispatches any actions through the Hubs
+    /// </summary>
+    public sealed class InputProcessorHostedService : BackgroundService
     {
-        private readonly ILogger<InputDispatcherHostedService> logger;
+        private readonly ILogger<InputProcessorHostedService> logger;
 
-        private readonly IHubsInputQueueService inputQueue;
+        private readonly IHubsInputQueue inputQueue;
 
         private readonly IDeviceStatusStore store;
 
-        private readonly IHubContext<MonitorHub, IMonitorHub> monitorHub;
+        private readonly IHubContext<MonitorHub, IMonitorHub> monitorHubContext;
 
-        public InputDispatcherHostedService(
-            ILogger<InputDispatcherHostedService> logger,
-            IHubsInputQueueService inputQueue,
+        private readonly MonitorHub monitorHub;
+
+        public InputProcessorHostedService(
+            ILogger<InputProcessorHostedService> logger,
+            IHubsInputQueue inputQueue,
             IDeviceStatusStore store,
-            IHubContext<MonitorHub, IMonitorHub> monitorHub)
+            IHubContext<MonitorHub, IMonitorHub> monitorHubContext)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.inputQueue = inputQueue ?? throw new ArgumentNullException(nameof(inputQueue));
             this.store = store ?? throw new ArgumentNullException(nameof(store));
-            this.monitorHub = monitorHub ?? throw new ArgumentNullException(nameof(monitorHub));
-
+            this.monitorHubContext = monitorHubContext ?? throw new ArgumentNullException(nameof(monitorHubContext));
             logger.LogDebug("Created");
         }
 
@@ -63,7 +68,7 @@ namespace IoTAS.Server.InputQueue
                         "Retrieved {Request}",
                         request);
 
-                    await DispatchRequest(request);
+                    await ProcessRequest(request);
                 }
                 catch (OperationCanceledException e)
                 {
@@ -87,101 +92,101 @@ namespace IoTAS.Server.InputQueue
                 $"Execution stopped fatalError = {fatalError}, cancellation rquested = {stoppingToken.IsCancellationRequested}");
         }
 
-        private async Task DispatchRequest(Request request)
+        private async Task ProcessRequest(Request request)
         {
             if (request is null)
             {
                 logger.LogWarning(
-                    nameof(DispatchRequest) + " - " +
+                    nameof(ProcessRequest) + " - " +
                     "Called with request == null");
                 
                 return;
             }
 
             logger.LogInformation(
-                nameof(DispatchRequest) + " - " + 
+                nameof(ProcessRequest) + " - " + 
                 "Dispatching {Request}",
                 request);
 
             switch (request.ReceivedDto)
             {
                 case DevToSrvDeviceRegistrationDto:
-                    await HandleDeviceRegistration(request);
+                    await ProcessDeviceRegistration(request);
                     break;
 
                 case DevToSrvDeviceHeartbeatDto:
-                    await HandleDeviceHeartbeat(request);
+                    await ProcessDeviceHeartbeat(request);
                     break;
 
                 case MonToSrvRegistrationDto:
-                    await HandleMonitorRegistration(request);
+                    await ProcessMonitorRegistration(request);
                     break;
 
                 default:
                     logger.LogError(
-                        nameof(DispatchRequest) + " - " +
+                        nameof(ProcessRequest) + " - " +
                         "Unknown request.ReceivedDto type : {Request}",
                         request);
                     break;
             }
         }
 
-        private async Task HandleDeviceRegistration(Request request)
+        private async Task ProcessDeviceRegistration(Request request)
         {
             Debug.Assert(
                 request.ReceivedDto is DevToSrvDeviceRegistrationDto,
-                $"{nameof(HandleDeviceRegistration)} request.ReceivedData is not {nameof(DevToSrvDeviceRegistrationDto)}");
+                $"{nameof(ProcessDeviceRegistration)} request.ReceivedData is not {nameof(DevToSrvDeviceRegistrationDto)}");
 
             var dtoIn = (DevToSrvDeviceRegistrationDto)request.ReceivedDto;
 
             logger.LogDebug(
-                nameof(HandleDeviceRegistration) + " - " +
+                nameof(ProcessDeviceRegistration) + " - " +
                 "Handling {Request}",
                 request);
 
             DeviceReportingStatus status = store.UpdateRegistration(dtoIn.DeviceId, request.ReceivedAt);
             var dtoOut = ConvertToStatusDto(status);
-            await monitorHub.Clients.All.ReceiveDeviceRegistrationUpdate(dtoOut);
+            await monitorHubContext.Clients.All.ReceiveDeviceStatusUpdate(dtoOut);
 
             logger.LogDebug(
-                nameof(HandleDeviceRegistration) + " - " +
+                nameof(ProcessDeviceRegistration) + " - " +
                 "Handled {Request}",
                 request);
         }
 
-        private async Task HandleDeviceHeartbeat(Request request)
+        private async Task ProcessDeviceHeartbeat(Request request)
         {
             Debug.Assert(
                 request.ReceivedDto is DevToSrvDeviceHeartbeatDto,
-                $"{nameof(HandleDeviceHeartbeat)} request.ReceivedData is not {nameof(DevToSrvDeviceHeartbeatDto)}");
+                $"{nameof(ProcessDeviceHeartbeat)} request.ReceivedData is not {nameof(DevToSrvDeviceHeartbeatDto)}");
 
             var dtoIn = (DevToSrvDeviceHeartbeatDto)request.ReceivedDto;
 
             logger.LogDebug(
-                nameof(HandleDeviceHeartbeat) + " - " +
+                nameof(ProcessDeviceHeartbeat) + " - " +
                 "Handling {Request}",
                 request);
 
             DeviceReportingStatus status = store.UpdateHeartbeat(dtoIn.DeviceId, request.ReceivedAt);
             var dtoOut = ConvertToHeartbeatDto(status);
-            await monitorHub.Clients.All.ReceiveDeviceHeartbeatUpdate(dtoOut);
+            await monitorHubContext.Clients.All.ReceiveDeviceHeartbeatUpdate(dtoOut);
 
             logger.LogDebug(
-                nameof(HandleDeviceHeartbeat) + " - " +
+                nameof(ProcessDeviceHeartbeat) + " - " +
                 "Handled {Request}",
                 request);
         }
 
-        private async Task HandleMonitorRegistration(Request request)
+        private async Task ProcessMonitorRegistration(Request request)
         {
             Debug.Assert(
                 request.ReceivedDto is MonToSrvRegistrationDto,
-                $"{nameof(HandleMonitorRegistration)} request.ReceivedData is not {nameof(MonToSrvRegistrationDto)}");
+                $"{nameof(ProcessMonitorRegistration)} request.ReceivedData is not {nameof(MonToSrvRegistrationDto)}");
 
             var dtoIn = (MonToSrvRegistrationDto)request.ReceivedDto;
 
             logger.LogDebug(
-                nameof(HandleMonitorRegistration) + " - " +
+                nameof(ProcessMonitorRegistration) + " - " +
                 "Handling {Request}",
                 request);
 
@@ -189,10 +194,10 @@ namespace IoTAS.Server.InputQueue
                 .Select(status => ConvertToStatusDto(status))
                 .ToArray();
 
-            await monitorHub.Clients.Client(request.ConnectionId).ReceiveDeviceStatusesReport(dtoOut);
+            await monitorHubContext.Clients.Client(request.ConnectionId).ReceiveDeviceStatusesSnapshot(dtoOut);
 
             logger.LogDebug(
-                nameof(HandleMonitorRegistration) + " - " +
+                nameof(ProcessMonitorRegistration) + " - " +
                 "Handled {Request}",
                 request);
         }

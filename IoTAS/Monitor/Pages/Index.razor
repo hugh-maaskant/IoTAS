@@ -37,13 +37,13 @@
             StateHasChanged();
         });
 
-        hubConnection.On<SrvToMonDeviceStatusDto>(nameof(IMonitorHub.ReceiveDeviceRegistrationUpdate), (statusDto) =>
+        hubConnection.On<SrvToMonDeviceStatusDto>(nameof(IMonitorHub.ReceiveDeviceStatusUpdate), (statusDto) =>
         {
             messages.Add(statusDto.ToString());
             StateHasChanged();
         });
 
-        hubConnection.On<SrvToMonDeviceStatusDto[]>(nameof(IMonitorHub.ReceiveDeviceStatusesReport), (statusListDto) =>
+        hubConnection.On<SrvToMonDeviceStatusDto[]>(nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot), (statusListDto) =>
         {
             messages.Add($"Received list of {statusListDto.Length} statusDtos");
             StateHasChanged();

@@ -1,22 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace IoTAS.Shared.Hubs
 {
-    /// <summary>
-    /// Device Attributes that need to be passed to the Server
-    /// during Device Registration.
-    /// </summary>
-    public record DevToSrvDeviceRegistrationDto(int DeviceId) : HubInDto;
-    
-
-    /// <summary>
-    /// Device Attributes that need to be passed to the Server
-    /// for a Device Heartbeat
-    /// </summary>
-    public record DevToSrvDeviceHeartbeatDto(int DeviceId) : HubInDto;
-
-
     /// <summary>
     /// Hub Interface provided by the Server side to the Device Clients
     /// </summary>

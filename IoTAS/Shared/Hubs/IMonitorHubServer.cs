@@ -15,7 +15,7 @@ namespace IoTAS.Shared.Hubs
     /// without being a breaking change on the interface itself (as long as
     /// the server can deal with any of its historic variants. 
     /// </remarks>
-    public record MonToSrvRegistrationDto : HubInDto
+    public record MonToSrvRegistrationDto : BaseHubInDto
     {
         // empty at this time
     }

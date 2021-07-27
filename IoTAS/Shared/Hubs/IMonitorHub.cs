@@ -7,41 +7,29 @@ using System.Threading.Tasks;
 
 namespace IoTAS.Shared.Hubs
 {
-    public record SrvToMonDeviceHeartbeatDto
-    (
-        int      DeviceId,          // The Id of the Device
-        DateTime ReceivedAt         // The DateTime that the HeartBeat was received
-    );
-
-    public record SrvToMonDeviceStatusDto
-    (
-        int      DeviceId,          // The Id of the Device
-        DateTime FirstRegisteredAt, // The very first registration DateTime
-        DateTime LastRegisteredAt,  // The most recent registration DateTime
-        DateTime LastSeenAt         // The most recently seen registration or heartbeat DateTime
-    );
-
     /// <summary>
-    /// Typesafe Hub Interface for the IoTAS Server to signal (call) the Monitor Clients
+    /// Typesafe Hub Interface for the Server to remote call a Monitor Client
     /// </summary>
     public interface IMonitorHub
     {
         /// <summary>
-        /// A remote call to notify Monitor(s) of a received Device ReceiveDeviceHeartbeat
+        /// An RPC to send Device Status to a Monitor,
+        /// e.g. due to a received DeviceRegistration
+        /// </summary>
+        /// <param name="statusDto">The Device status attributes</param>
+        /// <returns>A Task</returns>
+        public Task ReceiveDeviceStatusUpdate(SrvToMonDeviceStatusDto statusDto);
+
+        /// <summary>
+        /// An RPC to notify Monitor(s) of a received Device Heartbeat
         /// </summary>
         /// <param name="hearbeatDto">Heartbead DTO</param>
         /// <returns>A Task</returns>
         public Task ReceiveDeviceHeartbeatUpdate(SrvToMonDeviceHeartbeatDto hearbeatDto);
-
+        
         /// <summary>
-        /// A remote call to notify Monitor(s) of a received DeviceRegistration
-        /// </summary>
-        /// <param name="statusDto">The Device status attributes</param>
-        /// <returns>A Task</returns>
-        public Task ReceiveDeviceRegistrationUpdate(SrvToMonDeviceStatusDto statusDto);
-
-        /// <summary>
-        /// A remote call to inform a Monitor of the current Devices status
+        /// An RPC to send multiple Device statuses to a Monitor,
+        /// e.g. due to a received Monitor registration
         /// </summary>
         /// <param name="statusListDto">A List of Device status DTOs</param>
         /// <returns>A Task</returns>
@@ -52,6 +40,6 @@ namespace IoTAS.Shared.Hubs
         /// DeviceHearbeatUpdate until the comlete list with known Devices has 
         /// been sent.
         /// </remarks>
-        public Task ReceiveDeviceStatusesReport(SrvToMonDeviceStatusDto[] statusListDto);
+        public Task ReceiveDeviceStatusesSnapshot(SrvToMonDeviceStatusDto[] statusListDto);
     }
 }

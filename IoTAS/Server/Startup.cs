@@ -33,10 +33,10 @@ namespace IoTAS.Server
             services.AddRazorPages();
             services.AddSignalR();
 
-            services.AddSingleton<IHubsInputQueueService, HubsInputQueueService>();
+            services.AddSingleton<IHubsInputQueue, HubsInputQueueService>();
             services.AddSingleton<IDeviceStatusStore, VolatileDeviceStatusStore>();
 
-            services.AddHostedService<InputDispatcherHostedService>();
+            services.AddHostedService<InputProcessorHostedService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
