@@ -1,11 +1,17 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    
-    <div class="main">
-
-        <div class="content px-4">
+@using IoTAS.Monitor.Shared;
+ 
+<div class=iotas-wrapper>
+    <div class="iotas-page-header">
+        <MainHeader />
+    </div>
+    <div class="iotas-page-body">
+        <div class="iotas-page-content">
             @Body
         </div>
+    </div>
+    <div class="iotas-page-footer">
+        <MainFooter />
     </div>
 </div>
