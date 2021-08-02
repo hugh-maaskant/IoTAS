@@ -29,7 +29,7 @@ namespace IoTAS.Server
         public void ConfigureServices(IServiceCollection services)
         {
             Log.Information(nameof(Startup) + ": " + nameof(ConfigureServices));
-            services.AddControllersWithViews();
+            // services.AddControllersWithViews();
             services.AddRazorPages();
             services.AddSignalR();
 
@@ -68,7 +68,7 @@ namespace IoTAS.Server
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapRazorPages();
-                endpoints.MapControllers();
+                // endpoints.MapControllers();
                 endpoints.MapHub<Hubs.DeviceHub>(IDeviceHubServer.path);
                 endpoints.MapHub<Hubs.MonitorHub>(IMonitorHubServer.path);
                 endpoints.MapFallbackToFile("index.html");
