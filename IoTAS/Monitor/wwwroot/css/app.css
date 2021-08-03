@@ -24,13 +24,22 @@ body {
 }
 
 .iotas-page-header {
-    background-color: #333;
+    background-color: #404060;
     color: #fff;
     padding: 8px 20px 8px 20px;
     vertical-align: middle;
 }
 
+.iotas-brand-img {
+    height:80px;
+    width:100px;
+    margin-top:-8px;
+    float:left;
+}
+
 .iotas-brand {
+    display:block;
+    float:left;
     font-size: 1.5em;
     line-height: 64px;
 }
@@ -48,7 +57,7 @@ body {
 }
 
 .iotas-page-footer {
-    background-color: #444;
+    background-color: #444466;
     color: #fff;
     padding: 10px 20px 10px 20px;
 }
