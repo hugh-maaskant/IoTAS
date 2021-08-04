@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-namespace IoTAS.Server.DevicesStatusStore
+namespace IoTAS.Shared.DevicesStatusStore
 {
     /// <summary>
     /// Volatile (in memmory) implementation for IDeviceStatusStore
@@ -60,6 +60,16 @@ namespace IoTAS.Server.DevicesStatusStore
             values.CopyTo(valuesCopy, 0);
             
             return valuesCopy;
+        }
+
+        public void SetDeviceStatus(DeviceReportingStatus status)
+        {
+            logger.LogDebug(
+                nameof(SetDeviceStatus) + " - " +
+                "Insert or update the DeviceReportingStatus for Device {DeviceId}",
+                status.DeviceId);
+
+            store[status.DeviceId] =  status;   // overwrites if key exists, otherwise inserts
         }
 
         public DeviceReportingStatus UpdateHeartbeat(int deviceId, DateTime receivedAt)

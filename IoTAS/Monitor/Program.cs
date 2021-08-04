@@ -8,16 +8,23 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
+using Serilog;
+
 namespace IoTAS.Monitor
 {
     public class Program
     {
         public static async Task Main(string[] args)
         {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.BrowserConsole()
+                .CreateLogger();
+            Log.Information("Monitor started ...");
+
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
             builder.RootComponents.Add<App>("#app");
 
-            Console.WriteLine($"Baseaddress is {builder.HostEnvironment.BaseAddress}");
+            Log.Information($"Baseaddress is {builder.HostEnvironment.BaseAddress}");
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 

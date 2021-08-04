@@ -9,9 +9,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.SignalR;
 
+using IoTAS.Shared.DevicesStatusStore;
 using IoTAS.Shared.Hubs;
 using IoTAS.Server.Hubs;
-using IoTAS.Server.DevicesStatusStore;
 
 
 namespace IoTAS.Server.InputQueue
@@ -29,8 +29,6 @@ namespace IoTAS.Server.InputQueue
         private readonly IDeviceStatusStore store;
 
         private readonly IHubContext<MonitorHub, IMonitorHub> monitorHubContext;
-
-        private readonly MonitorHub monitorHub;
 
         public InputProcessorHostedService(
             ILogger<InputProcessorHostedService> logger,
@@ -145,7 +143,7 @@ namespace IoTAS.Server.InputQueue
                 request);
 
             DeviceReportingStatus status = store.UpdateRegistration(dtoIn.DeviceId, request.ReceivedAt);
-            var dtoOut = ConvertToStatusDto(status);
+            var dtoOut = status.ToStatusDto();
             await monitorHubContext.Clients.All.ReceiveDeviceStatusUpdate(dtoOut);
 
             logger.LogDebug(
@@ -168,7 +166,7 @@ namespace IoTAS.Server.InputQueue
                 request);
 
             DeviceReportingStatus status = store.UpdateHeartbeat(dtoIn.DeviceId, request.ReceivedAt);
-            var dtoOut = ConvertToHeartbeatDto(status);
+            var dtoOut = status.ToHeartbeatDto();
             await monitorHubContext.Clients.All.ReceiveDeviceHeartbeatUpdate(dtoOut);
 
             logger.LogDebug(
@@ -191,7 +189,7 @@ namespace IoTAS.Server.InputQueue
                 request);
 
             var dtoOut = store.GetDeviceStatuses()
-                .Select(status => ConvertToStatusDto(status))
+                .Select(status => status.ToStatusDto())
                 .ToArray();
 
             await monitorHubContext.Clients.Client(request.ConnectionId).ReceiveDeviceStatusesSnapshot(dtoOut);
@@ -201,17 +199,5 @@ namespace IoTAS.Server.InputQueue
                 "Handled {Request}",
                 request);
         }
-
-        private readonly Func<DeviceReportingStatus, SrvToMonDeviceHeartbeatDto> ConvertToHeartbeatDto =
-            (status) => new SrvToMonDeviceHeartbeatDto(
-                DeviceId: status.DeviceId,
-                ReceivedAt: status.LastSeenAt);
-
-        private readonly Func<DeviceReportingStatus, SrvToMonDeviceStatusDto> ConvertToStatusDto =
-            (status) => new SrvToMonDeviceStatusDto(
-                DeviceId: status.DeviceId,
-                FirstRegisteredAt: status.FirstRegisteredAt,
-                LastRegisteredAt: status.LastRegisteredAt,
-                LastSeenAt: status.LastSeenAt);
     }
 }

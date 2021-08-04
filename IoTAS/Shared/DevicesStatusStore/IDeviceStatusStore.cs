@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace IoTAS.Server.DevicesStatusStore
+namespace IoTAS.Shared.DevicesStatusStore
 {
     /// <summary>
     /// Interface for the internal Device (Reporting) Status Store
@@ -30,6 +30,12 @@ namespace IoTAS.Server.DevicesStatusStore
         public IEnumerable<DeviceReportingStatus> GetDeviceStatuses();
 
         /// <summary>
+        /// Insert or update the <see cref="DeviceReportingStatus"/> in the store
+        /// </summary>
+        /// <param name="">The DeviceReportingStatus to store</param>
+        public void SetDeviceStatus(DeviceReportingStatus status);
+
+        /// <summary>
         /// Upate the Device Registration date and time for the Device with DeviceId deviceId.
         /// </summary>
         /// <param name="deviceId">The Id of the Device to update</param>
@@ -38,11 +44,15 @@ namespace IoTAS.Server.DevicesStatusStore
         public DeviceReportingStatus UpdateRegistration(int deviceId, DateTime receivedAt);
 
         /// <summary>
-        /// Upate the Device Heartbeat date and time for the Device with DeviceId deviceId
+        /// Upate the Device Heartbeat date and time for the Device with DeviceId deviceId 
         /// </summary>
         /// <param name="deviceId">The Id of the Device to update</param>
         /// <param name="receivedAt">The date and time the HHeartbeat was received</param>
         /// <returns>The new or updated <see cref="DeviceReportingStatus"/> record</returns>
+        /// <remarks>
+        /// If the entry does not exist a new entry is created based on the input, but this 
+        /// shouldd not happen as thhe Device should first be registered.
+        /// </remarks>
         public DeviceReportingStatus UpdateHeartbeat(int deviceId, DateTime receivedAt);
     }
 }

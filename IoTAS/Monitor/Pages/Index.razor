@@ -1,6 +1,14 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.SignalR.Client
+
+@using IoTAS.Shared.DevicesStatusStore
 @using IoTAS.Shared.Hubs
+
+@using Microsoft.Extensions.Logging;
+@inject ILoggerFactory LoggerFactory
+@inject ILogger<Index> logger;
+
+
 @inject NavigationManager NavigationManager
 @implements IAsyncDisposable
 
@@ -9,12 +17,32 @@
 <p>
     Link status: @(IsConnected ? $"up - connectionId = {ConnectionId}" : "down")
 </p>
+
+<h3>StatusStore</h3>
+@if (_store is null)
+{
+    <p>The store is empty</p>
+}
+else
+{
+
+    <ul id="StatusStore">
+        @foreach (var deviceStatus in _store.GetDeviceStatuses())
+        {
+            <li>@deviceStatus.ToString()</li>
+        }
+    </ul>
+}
+
+<h3>MessahgeList</h3>
 <ul id="messagesList">
     @foreach (var message in messages)
     {
         <li>@message</li>
     }
+
 </ul>
+
 
 
 @code {
@@ -22,10 +50,14 @@
     private List<string> messages = new List<string>();
     private Uri monitorHubUrl;
 
+    private IDeviceStatusStore _store;
+
     protected override async Task OnInitializedAsync()
     {
-        monitorHubUrl = NavigationManager.ToAbsoluteUri(IMonitorHubServer.path);
+        var _storeLogger = LoggerFactory.CreateLogger<VolatileDeviceStatusStore>();
+        _store = new VolatileDeviceStatusStore(_storeLogger);
 
+        monitorHubUrl = NavigationManager.ToAbsoluteUri(IMonitorHubServer.path);
         hubConnection = new HubConnectionBuilder()
             .WithUrl(monitorHubUrl)
             .Build();
@@ -33,19 +65,25 @@
         // Register the Hub callback methods
         hubConnection.On<SrvToMonDeviceHeartbeatDto>(nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate), (hearbeatDto) =>
         {
+            _ = _store.UpdateHeartbeat(hearbeatDto.DeviceId, hearbeatDto.ReceivedAt);
             messages.Add(hearbeatDto.ToString());
             StateHasChanged();
         });
 
         hubConnection.On<SrvToMonDeviceStatusDto>(nameof(IMonitorHub.ReceiveDeviceStatusUpdate), (statusDto) =>
         {
+            _store.SetDeviceStatus(DeviceReportingStatus.FromStatusDto(statusDto));
             messages.Add(statusDto.ToString());
             StateHasChanged();
         });
 
         hubConnection.On<SrvToMonDeviceStatusDto[]>(nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot), (statusListDto) =>
         {
-            messages.Add($"Received list of {statusListDto.Length} statusDtos");
+            foreach (var statusDto in statusListDto)
+            {
+                _store.SetDeviceStatus(DeviceReportingStatus.FromStatusDto(statusDto));
+                messages.Add(statusDto.ToString());
+            }
             StateHasChanged();
         });
 

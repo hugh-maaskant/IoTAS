@@ -11,7 +11,7 @@ namespace IoTAS.Shared.Hubs
     /// </remarks>
     public record SrvToMonDeviceStatusDto
     (
-        int DeviceId,          // The Id of the Device
+        int DeviceId,               // The Id of the Device
         DateTime FirstRegisteredAt, // The very first registration DateTime
         DateTime LastRegisteredAt,  // The most recent registration DateTime
         DateTime LastSeenAt         // The most recently seen registration or heartbeat DateTime

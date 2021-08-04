@@ -9,9 +9,9 @@ using System.Linq;
 
 using Serilog;
 
+using IoTAS.Shared.DevicesStatusStore;
 using IoTAS.Shared.Hubs;
 using IoTAS.Server.InputQueue;
-using IoTAS.Server.DevicesStatusStore;
 
 namespace IoTAS.Server
 {
