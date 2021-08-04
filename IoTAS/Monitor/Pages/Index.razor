@@ -6,7 +6,7 @@
 
 @using Microsoft.Extensions.Logging;
 @inject ILoggerFactory LoggerFactory
-@inject ILogger<Index> logger;
+@inject ILogger<Index> Logger;
 
 
 @inject NavigationManager NavigationManager
@@ -25,7 +25,6 @@
 }
 else
 {
-
     <ul id="StatusStore">
         @foreach (var deviceStatus in _store.GetDeviceStatuses())
         {
@@ -36,7 +35,7 @@ else
 
 <h3>MessahgeList</h3>
 <ul id="messagesList">
-    @foreach (var message in messages)
+    @foreach (var message in _messages)
     {
         <li>@message</li>
     }
@@ -46,9 +45,8 @@ else
 
 
 @code {
-    private HubConnection hubConnection;
-    private List<string> messages = new List<string>();
-    private Uri monitorHubUrl;
+    private HubConnection _hubConnection;
+    private List<string> _messages = new List<string>();
 
     private IDeviceStatusStore _store;
 
@@ -57,55 +55,56 @@ else
         var _storeLogger = LoggerFactory.CreateLogger<VolatileDeviceStatusStore>();
         _store = new VolatileDeviceStatusStore(_storeLogger);
 
-        monitorHubUrl = NavigationManager.ToAbsoluteUri(IMonitorHubServer.path);
-        hubConnection = new HubConnectionBuilder()
+        var monitorHubUrl = NavigationManager.ToAbsoluteUri(IMonitorHubServer.path);
+        _hubConnection = new HubConnectionBuilder()
             .WithUrl(monitorHubUrl)
             .Build();
 
         // Register the Hub callback methods
-        hubConnection.On<SrvToMonDeviceHeartbeatDto>(nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate), (hearbeatDto) =>
+        _hubConnection.On<SrvToMonDeviceHeartbeatDto>(nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate), (hearbeatDto) =>
         {
             _ = _store.UpdateHeartbeat(hearbeatDto.DeviceId, hearbeatDto.ReceivedAt);
-            messages.Add(hearbeatDto.ToString());
+            _messages.Add(hearbeatDto.ToString());
             StateHasChanged();
         });
 
-        hubConnection.On<SrvToMonDeviceStatusDto>(nameof(IMonitorHub.ReceiveDeviceStatusUpdate), (statusDto) =>
+        _hubConnection.On<SrvToMonDeviceStatusDto>(nameof(IMonitorHub.ReceiveDeviceStatusUpdate), (statusDto) =>
         {
             _store.SetDeviceStatus(DeviceReportingStatus.FromStatusDto(statusDto));
-            messages.Add(statusDto.ToString());
+            _messages.Add(statusDto.ToString());
             StateHasChanged();
         });
 
-        hubConnection.On<SrvToMonDeviceStatusDto[]>(nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot), (statusListDto) =>
+        _hubConnection.On<SrvToMonDeviceStatusDto[]>(nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot), (statusListDto) =>
         {
             foreach (var statusDto in statusListDto)
             {
                 _store.SetDeviceStatus(DeviceReportingStatus.FromStatusDto(statusDto));
-                messages.Add(statusDto.ToString());
+                _messages.Add(statusDto.ToString());
             }
             StateHasChanged();
         });
 
-        await hubConnection.StartAsync();
+        await _hubConnection.StartAsync();
 
         if (IsConnected)
         {
             MonToSrvRegistrationDto registrationDto = new(); // currently empty --> default record returned
-            await hubConnection.SendAsync(nameof(IMonitorHubServer.RegisterMonitorClient), registrationDto);
-            Console.WriteLine($"Monitor has been registered with the Server, connection = {hubConnection.ConnectionId}");
+            await _hubConnection.SendAsync(nameof(IMonitorHubServer.RegisterMonitorClient), registrationDto);
+            Logger.LogInformation($"Monitor has been registered with the Server, connection = {_hubConnection.ConnectionId}");
         }
     }
 
-    private bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+    private bool IsConnected => _hubConnection.State == HubConnectionState.Connected;
 
-    private string ConnectionId => hubConnection.ConnectionId;
+    private string ConnectionId => _hubConnection.ConnectionId;
 
     public async ValueTask DisposeAsync()
     {
-        if (hubConnection is not null)
+        if (_hubConnection is not null)
         {
-            await hubConnection.DisposeAsync();
+            await _hubConnection.DisposeAsync();
+            Logger.LogInformation("Disposed ...");
         }
     }
 }

@@ -103,7 +103,7 @@ namespace IoTAS.Device
         /// The Cntrl-C (and Cntrl-Break) handler cancels the tokenSource, 
         /// which will then gracefully shut down the program.
         /// </summary>
-        private static ConsoleCancelEventHandler CntrlcHandler = (sender, eventArgs) =>
+        private static readonly ConsoleCancelEventHandler CntrlcHandler = (sender, eventArgs) =>
         {
             Console.WriteLine("Cancelling due to Cntrl-C ...");
             
@@ -119,7 +119,7 @@ namespace IoTAS.Device
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception while cancelling: ", e);
+                Console.WriteLine($"Exception while cancelling: {e.Message}");
                 throw;
             }
         };

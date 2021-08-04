@@ -1,11 +1,8 @@
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 using Serilog;
@@ -21,14 +18,22 @@ namespace IoTAS.Monitor
                 .CreateLogger();
             Log.Information("Monitor started ...");
 
-            var builder = WebAssemblyHostBuilder.CreateDefault(args);
-            builder.RootComponents.Add<App>("#app");
+            try
+            {
+                var builder = WebAssemblyHostBuilder.CreateDefault(args);
+                builder.RootComponents.Add<App>("#app");
 
-            Log.Information($"Baseaddress is {builder.HostEnvironment.BaseAddress}");
+                Log.Information($"Baseaddress is {builder.HostEnvironment.BaseAddress}");
 
-            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+                builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
-            await builder.Build().RunAsync();
+                await builder.Build().RunAsync();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "An exception occurred while creating the WASM host");
+                throw;
+            }
         }
     }
 }
