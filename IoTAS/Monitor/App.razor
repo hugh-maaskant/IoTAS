@@ -1,10 +1,134 @@
-<Router AppAssembly="@typeof(Program).Assembly" PreferExactMatches="@true">
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.Extensions.Logging;
+
+@using IoTAS.Shared.DevicesStatusStore
+@using IoTAS.Shared.Hubs
+
+@inject NavigationManager NavigationManager
+@inject ILogger<App> Logger
+@inject ILogger<VolatileDeviceStatusStore> StoreLogger
+
+@implements IAsyncDisposable
+
+
+<Router AppAssembly="@typeof(Program).Assembly" PreferExactMatches="@true">   
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <CascadingValue Name="CascadingStore" Value="@_store">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        </CascadingValue>
     </Found>
     <NotFound>
         <LayoutView Layout="@typeof(MainLayout)">
-            <p>Sorry, there's nothing at this address.</p>
+            <p>Sorry, there is nothing at this address.</p>
         </LayoutView>
     </NotFound>
 </Router>
+
+@code {
+
+    private HubConnection _hubConnection;
+
+    private IDeviceStatusStore _store;
+
+    protected override void OnInitialized()
+    {
+        Logger.LogInformation("App initialized ...");
+
+        _store = new VolatileDeviceStatusStore(StoreLogger);
+
+        var path = NavigationManager.ToAbsoluteUri(IMonitorHubServer.path);
+        Logger.LogInformation($"Using MonitorHub at {path}");
+
+
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(path)
+            .Build();
+
+        // Register callbacks for the Connection life-cycle events
+        _hubConnection.Closed += ClosedHandler;
+        _hubConnection.Reconnected += ReconnectedHandler;
+        _hubConnection.Reconnecting += ReconnectingHandler;
+
+
+        // Register the IMonitorHub callback methods
+        _hubConnection.On<SrvToMonDeviceHeartbeatDto>(nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate), (hearbeatDto) =>
+        {
+            Logger.LogInformation("ReceiveDeviceHeartbeatUpdate callback {HeartBeatDto}", hearbeatDto);
+            _ = _store.UpdateHeartbeat(hearbeatDto.DeviceId, hearbeatDto.ReceivedAt);
+            StateHasChanged();
+        });
+
+        _hubConnection.On<SrvToMonDeviceStatusDto>(nameof(IMonitorHub.ReceiveDeviceStatusUpdate), (statusDto) =>
+        {
+            Logger.LogInformation("ReceiveDeviceStatusUpdate callback: {StatusDto}", statusDto);
+            _store.SetDeviceStatus(DeviceReportingStatus.FromStatusDto(statusDto));
+            StateHasChanged();
+        });
+
+        _hubConnection.On<SrvToMonDeviceStatusDto[]>(nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot), (statusListDto) =>
+        {
+            Logger.LogInformation("ReceiveDeviceStatusesSnapshot callback {statusListDto.Count} Devices in List", statusListDto.Count());
+            foreach (var statusDto in statusListDto)
+            {
+                _store.SetDeviceStatus(DeviceReportingStatus.FromStatusDto(statusDto));
+            }
+            StateHasChanged();
+        });
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await _hubConnection.StartAsync();
+
+            if (_hubConnection.State == HubConnectionState.Connected)
+            {
+                MonToSrvRegistrationDto registrationDto = new(); // currently empty --> default record returned
+                await _hubConnection.SendAsync(nameof(IMonitorHubServer.RegisterMonitorClient), registrationDto);
+                Logger.LogInformation($"Monitor has been registered with the Server, connection = {_hubConnection.ConnectionId}");
+            }
+        }
+    }
+
+
+    private Task ClosedHandler(Exception ex)
+    {
+        Logger.LogInformation($"Done with {nameof(ClosedHandler)}");
+
+        return Task.CompletedTask;
+    }
+
+    private Task ReconnectedHandler(string connectionId)
+    {
+        Logger.LogInformation($"Done with {nameof(ReconnectedHandler)}");
+
+        return Task.CompletedTask;
+    }
+
+    private Task ReconnectingHandler(Exception ex)
+    {
+        Logger.LogInformation($"Done with {nameof(ReconnectingHandler)}");
+
+        return Task.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            _hubConnection.Remove(nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate));
+            _hubConnection.Remove(nameof(IMonitorHub.ReceiveDeviceStatusUpdate));
+            _hubConnection.Remove(nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot));
+
+            _hubConnection.Closed -= ClosedHandler;
+            _hubConnection.Reconnected -= ReconnectedHandler;
+            _hubConnection.Reconnecting -= ReconnectingHandler;
+
+            await _hubConnection.DisposeAsync();
+            Logger.LogInformation("Disposed ...");
+        }
+    }
+
+}

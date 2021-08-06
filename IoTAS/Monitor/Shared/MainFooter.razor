@@ -1,13 +1,28 @@
 ﻿@using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.Extensions.Logging;
 
+@using IoTAS.Shared.Hubs;
+
+@inject NavigationManager NavigationManager;
+
 @inject ILogger<MainFooter> Logger
 
-@inject HubConnection HubConnection
+@if (_hubConnection is null)
+{
+    footerText = "Link status unknown ...";
+}
+else
+{
+    footerText = $"Link status: {_hubConnection.State}";
 
-@implements IAsyncDisposable
+    if (!string.IsNullOrWhiteSpace(_hubConnection.ConnectionId))
+    {
+        footerText += $" - ConnectionId: {_hubConnection.ConnectionId}";
+    }
+}
 
-@footerText
+@footerText;
+
 
 @code {
 
@@ -15,82 +30,18 @@
 
     private string exceptionMsg = string.Empty;
 
+    private HubConnection _hubConnection;
+
     protected override void OnInitialized()
     {
-        // Register callbacks for the Connection life-cycle events
-        HubConnection.Closed += ClosedHandler;
-        HubConnection.Reconnected += ReconnectedHandler;
-        HubConnection.Reconnecting += ReconnectingHandler;
+        Logger.LogInformation($"{nameof(MainFooter)} initialized ...");
 
-        setFooterText();
-
-        Logger.LogInformation("Initialized ...");
+        var path = NavigationManager.ToAbsoluteUri(IMonitorHubServer.path);
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(path)
+            .Build();
 
         base.OnInitialized();
     }
 
-    private Task ClosedHandler(Exception ex)
-    {
-        if (ex is not null)
-        {
-            exceptionMsg = ex.Message;
-        }
-        setFooterText();
-
-        Logger.LogInformation($"Done with {nameof(ClosedHandler)}");
-
-        return Task.CompletedTask;
-    }
-
-    private Task ReconnectedHandler(string connectionId)
-    {
-        exceptionMsg = string.Empty;
-        setFooterText();
-
-        Logger.LogInformation($"Done with {nameof(ReconnectedHandler)}");
-
-        return Task.CompletedTask;
-    }
-
-    private Task ReconnectingHandler(Exception ex)
-    {
-        if (ex is not null)
-        {
-            exceptionMsg = ex.Message;
-        }
-        setFooterText();
-
-        Logger.LogInformation($"Done with {nameof(ReconnectingHandler)}");
-
-        return Task.CompletedTask;
-    }
-
-    private void setFooterText()
-    {
-        footerText = $"Link status: {HubConnection.State}";
-
-        if (!string.IsNullOrWhiteSpace(exceptionMsg))
-        {
-            footerText += $" - error: {exceptionMsg}";
-        }
-
-        if (!string.IsNullOrWhiteSpace(HubConnection.ConnectionId))
-        {
-            footerText += $" - ConnectionId: {HubConnection.ConnectionId}";
-        }
-        StateHasChanged();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (HubConnection is not null)
-        {
-            // Unregister callbacks for the Connection life-cycle events
-            HubConnection.Closed -= ClosedHandler;
-            HubConnection.Reconnected -= ReconnectedHandler;
-            HubConnection.Reconnecting -= ReconnectingHandler;
-
-            await HubConnection.DisposeAsync();
-        }
-    }
 }
