@@ -23,6 +23,8 @@ namespace IoTAS.Shared.DevicesStatusStore
             logger.LogInformation("Store created");
         }
 
+        public int Count { get => store.Count; }
+
         public DeviceReportingStatus GetDeviceStatus(int deviceId)
         {
             logger.LogDebug(

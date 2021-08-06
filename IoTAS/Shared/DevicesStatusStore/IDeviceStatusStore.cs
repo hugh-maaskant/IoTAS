@@ -17,6 +17,11 @@ namespace IoTAS.Shared.DevicesStatusStore
     public interface IDeviceStatusStore
     {
         /// <summary>
+        /// The number of <see cref="DeviceReportingStatus"/> items in the Store
+        /// </summary>
+        public int Count { get; }
+
+        /// <summary>
         /// Get the current DeviceReportingStatus for the Device with DeviceId deviceId
         /// </summary>
         /// <param name="deviceId">The Id of the Device to get the status off</param>
