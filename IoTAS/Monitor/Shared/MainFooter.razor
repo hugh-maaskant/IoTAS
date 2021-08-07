@@ -7,41 +7,17 @@
 
 @inject ILogger<MainFooter> Logger
 
-@if (_hubConnection is null)
-{
-    footerText = "Link status unknown ...";
-}
-else
-{
-    footerText = $"Link status: {_hubConnection.State}";
-
-    if (!string.IsNullOrWhiteSpace(_hubConnection.ConnectionId))
-    {
-        footerText += $" - ConnectionId: {_hubConnection.ConnectionId}";
-    }
-}
-
-@footerText;
-
+@FooterText
 
 @code {
 
-    private string footerText = string.Empty;
-
-    private string exceptionMsg = string.Empty;
-
-    private HubConnection _hubConnection;
+    [CascadingParameter(Name = "CascadingConnectionStatusText")]
+    public string FooterText { get; set; }
+   
 
     protected override void OnInitialized()
     {
         Logger.LogInformation($"{nameof(MainFooter)} initialized ...");
-
-        var path = NavigationManager.ToAbsoluteUri(IMonitorHubServer.path);
-        _hubConnection = new HubConnectionBuilder()
-            .WithUrl(path)
-            .Build();
-
-        base.OnInitialized();
     }
 
 }

@@ -25,6 +25,8 @@ namespace IoTAS.Shared.DevicesStatusStore
 
         public int Count { get => store.Count; }
 
+        public void Clear() => store.Clear();
+
         public DeviceReportingStatus GetDeviceStatus(int deviceId)
         {
             logger.LogDebug(
@@ -49,13 +51,13 @@ namespace IoTAS.Shared.DevicesStatusStore
             return new(deviceId, default, default, default);
         }
 
-        public IEnumerable<DeviceReportingStatus> GetDeviceStatuses()
+        public IEnumerable<DeviceReportingStatus> GetDevicesStatusList()
         {
             var values = store.Values;
 
             logger.LogDebug(
-                nameof(GetDeviceStatuses) + " - " +
-                "Get Reporting Status for all {DevicesCount} Devices",
+                nameof(GetDevicesStatusList) + " - " +
+                "Getting Reporting Status for all {DevicesCount} Devices",
                 values.Count);
             
             DeviceReportingStatus[] valuesCopy = new DeviceReportingStatus[values.Count];

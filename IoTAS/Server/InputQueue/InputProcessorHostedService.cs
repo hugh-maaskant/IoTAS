@@ -188,7 +188,7 @@ namespace IoTAS.Server.InputQueue
                 "Handling {Request}",
                 request);
 
-            var dtoOut = store.GetDeviceStatuses()
+            var dtoOut = store.GetDevicesStatusList()
                 .Select(status => status.ToStatusDto())
                 .ToArray();
 

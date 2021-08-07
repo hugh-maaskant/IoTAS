@@ -7,14 +7,14 @@
 @inject ILogger<Index> Logger
 
 <h3>Device Status List</h3>
-@if (Statusses is null || Statusses.Count() == 0)
+@if (DeviceStatusses is null || DeviceStatusses.Count() == 0)
 {
     <p>Currently there are no know Devices ...</p>
 }
 else
 {
     <ul>
-        @foreach (var deviceStatus in Statusses)
+        @foreach (var deviceStatus in DeviceStatusses)
         {
             <li>@deviceStatus.ToString()</li>
         }
@@ -23,8 +23,8 @@ else
 
 @code {
 
-    [CascadingParameter(Name = "CascadingStatusList")]
-    public  IEnumerable<DeviceReportingStatus> Statusses { get; set; }
+    [CascadingParameter(Name = "CascadingDeviceStatusList")]
+    public  IEnumerable<DeviceReportingStatus> DeviceStatusses { get; set; }
 
     protected override void OnInitialized()
     {

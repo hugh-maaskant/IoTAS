@@ -22,6 +22,11 @@ namespace IoTAS.Shared.DevicesStatusStore
         public int Count { get; }
 
         /// <summary>
+        /// Remove all keys and <see cref="DeviceReportingStatus"/> items from the Store
+        /// </summary>
+        void Clear();
+
+        /// <summary>
         /// Get the current DeviceReportingStatus for the Device with DeviceId deviceId
         /// </summary>
         /// <param name="deviceId">The Id of the Device to get the status off</param>
@@ -31,8 +36,8 @@ namespace IoTAS.Shared.DevicesStatusStore
         /// <summary>
         /// Get the current DeviceReportingStatus for all the Devices
         /// </summary>
-        /// <returns>An enumerable copy (snapshot) of the current DeviceReportingStatus of all Devices</returns>
-        public IEnumerable<DeviceReportingStatus> GetDeviceStatuses();
+        /// <returns>An IEnumerable<DeviceReportingStatus> over a copy (snapshot) of the current Devices statusses</returns>
+        public IEnumerable<DeviceReportingStatus> GetDevicesStatusList();
 
         /// <summary>
         /// Insert or update the <see cref="DeviceReportingStatus"/> in the store
