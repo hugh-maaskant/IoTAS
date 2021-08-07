@@ -11,8 +11,8 @@ namespace IoTAS.Device
     class Program
     {
         // Hardcoded for now, possibly get from configuration lateron
-        private static readonly string hubUrlHttps = "https://localhost:5001" + IDeviceHubServer.path;
-        // private static readonly string hubUrlHttps = "https://localhost:44388" + IDeviceHubServer.path;
+        // private static readonly string hubUrlHttps = "https://localhost:5001" + IDeviceHubServer.path;
+        private static readonly string hubUrlHttps = "https://localhost:44388" + IDeviceHubServer.path;
         // private static readonly string hubUrlHttp  = "http://localhost:58939" + IDeviceHubServer.path;
 
         // Must be a field so the event handlers can access them :-(.
@@ -180,7 +180,7 @@ namespace IoTAS.Device
                 {
                     random ??= new Random();
                     int delay = random.Next(2500, 5000) + delayIncrease;
-                    if (delayIncrease <= 12500) delayIncrease += 2500;
+                    if (delayIncrease <= 17500) delayIncrease += 2500;
 
                     Console.WriteLine($"Error while connecting: {e.Message}; retrying in {delay} msec");
                     try

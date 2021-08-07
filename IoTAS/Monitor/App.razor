@@ -1,3 +1,5 @@
+@using System.Threading.Tasks;
+
 @using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.Extensions.Logging;
 
@@ -11,7 +13,7 @@
 @implements IAsyncDisposable
 
 
-<Router AppAssembly="@typeof(Program).Assembly" PreferExactMatches="@true">   
+<Router AppAssembly="@typeof(Program).Assembly" PreferExactMatches="@true">
     <Found Context="routeData">
         <CascadingValue Name="CascadingStatusList" Value="@_statuses">
             <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
@@ -42,16 +44,11 @@
         var path = NavigationManager.ToAbsoluteUri(IMonitorHubServer.path);
         Logger.LogInformation($"Using MonitorHub at {path}");
 
-
+        // Create and configure a HubConnection, but do not yet start it to avoid making
+        // the user wait. Delay start to after the FirstRender.
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(path)
             .Build();
-
-        // Register callbacks for the Connection life-cycle events
-        _hubConnection.Closed += ClosedHandler;
-        _hubConnection.Reconnected += ReconnectedHandler;
-        _hubConnection.Reconnecting += ReconnectingHandler;
-
 
         // Register the IMonitorHub callback methods
         _hubConnection.On<SrvToMonDeviceHeartbeatDto>(nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate), (hearbeatDto) =>
@@ -86,35 +83,109 @@
     {
         if (firstRender)
         {
-            await _hubConnection.StartAsync();
+            await ConnectWithRetryAsync();
 
             if (_hubConnection.State == HubConnectionState.Connected)
             {
                 MonToSrvRegistrationDto registrationDto = new(); // currently empty --> default record returned
                 await _hubConnection.SendAsync(nameof(IMonitorHubServer.RegisterMonitorClient), registrationDto);
-                Logger.LogInformation($"Monitor has been registered with the Server, connection = {_hubConnection.ConnectionId}");
+                Logger.LogInformation(
+                    nameof(OnAfterRenderAsync) + " - " +
+                    "Monitor has been registered with the Server, {ConnectionId}",
+                    _hubConnection.ConnectionId);
             }
         }
     }
 
-
-    private Task ClosedHandler(Exception ex)
+    /// <summary>
+    /// Starts the HubConnection and configures it for lifecycle event handling, including automatic reconnection
+    /// </summary>
+    /// <param name="connection">The HubConnection that needs to be started and configured</param>
+    /// <param name="token">Cancellation token to end the Task</param>
+    /// <returns>
+    /// <see langword="true"/> upon succesful connection startup, <see langword="false"/> otherwise
+    /// </returns>
+    private async Task StartAndConfigureConnectionAsync()
     {
-        Logger.LogInformation($"Done with {nameof(ClosedHandler)}");
+        await ConnectWithRetryAsync();
+
+        if (_hubConnection.State == HubConnectionState.Connected)
+        {
+            _hubConnection.Closed += (e) => ConnectionClosedHandler(e);
+            _hubConnection.Reconnecting += (e) => ConnectionReconnectingHandler(e);
+            _hubConnection.Reconnected += (newId) => ConnectionReconnectedHandler(newId); ;
+        }
+        else
+        {
+            Logger.LogCritical("Failed to connect to Server Hub");
+        }
+    }
+
+    /// <summary>
+    /// (Re-)Starts the HubConnection untill succesfull
+    /// </summary>
+    /// <param name="connection">The HubConnection that needs to be started</param>
+    /// <param name="token">Cancellation token to end the Task</param>
+    /// <returns>
+    /// <see langword="true"/> upon succesful connection startup, <see langword="false"/> otherwise
+    /// </returns>
+    private async Task ConnectWithRetryAsync()
+    {
+        Random random = null;
+        int delayIncrease = 0;
+
+        // Keep trying to until we can start or the browser tab is closed by the user
+        while (_hubConnection.State != HubConnectionState.Connected)
+        {
+            try
+            {
+                Console.WriteLine("Trying to connect ...");
+                await _hubConnection.StartAsync();
+                Console.WriteLine("Connection has been established");
+            }
+            catch (Exception e)
+            {
+                random ??= new Random();
+                int delay = random.Next(2500, 5000) + delayIncrease;
+                if (delayIncrease <= 17500) delayIncrease += 2500;
+
+                Console.WriteLine($"Error while connecting: {e.Message}; retrying in {delay} msec");
+                await Task.Delay(delay);
+            }
+        }
+    }
+
+    private Task ConnectionClosedHandler(Exception e)
+    {
+        if (e is null)
+        {
+            Logger.LogWarning(
+                nameof(ConnectionClosedHandler) + " - " +
+                "Connection closed by Server");
+            // cannot show old data
+            // _store.Clear();
+            // _statuses = _store.GetDeviceStatuses();
+            return Task.CompletedTask;
+        }
+       
+        Logger.LogWarning(
+            e,
+            nameof(ConnectionClosedHandler) + " - " +
+            "Connection to Server has been lost");
+
+        return ConnectWithRetryAsync();
+    }
+
+    private Task ConnectionReconnectedHandler(string connectionId)
+    {
+        Logger.LogInformation($"Done with {nameof(ConnectionReconnectedHandler)}");
 
         return Task.CompletedTask;
     }
 
-    private Task ReconnectedHandler(string connectionId)
+    private Task ConnectionReconnectingHandler(Exception ex)
     {
-        Logger.LogInformation($"Done with {nameof(ReconnectedHandler)}");
-
-        return Task.CompletedTask;
-    }
-
-    private Task ReconnectingHandler(Exception ex)
-    {
-        Logger.LogInformation($"Done with {nameof(ReconnectingHandler)}");
+        Logger.LogInformation($"Done with {nameof(ConnectionReconnectingHandler)}");
 
         return Task.CompletedTask;
     }
@@ -127,9 +198,9 @@
             _hubConnection.Remove(nameof(IMonitorHub.ReceiveDeviceStatusUpdate));
             _hubConnection.Remove(nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot));
 
-            _hubConnection.Closed -= ClosedHandler;
-            _hubConnection.Reconnected -= ReconnectedHandler;
-            _hubConnection.Reconnecting -= ReconnectingHandler;
+            _hubConnection.Closed -= ConnectionClosedHandler;
+            _hubConnection.Reconnected -= ConnectionReconnectedHandler;
+            _hubConnection.Reconnecting -= ConnectionReconnectingHandler;
 
             await _hubConnection.DisposeAsync();
             Logger.LogInformation("Disposed ...");
