@@ -13,7 +13,7 @@
 
 <Router AppAssembly="@typeof(Program).Assembly" PreferExactMatches="@true">   
     <Found Context="routeData">
-        <CascadingValue Name="CascadingStore" Value="@_store">
+        <CascadingValue Name="CascadingStatusList" Value="@_statuses">
             <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
         </CascadingValue>
     </Found>
@@ -30,11 +30,14 @@
 
     private IDeviceStatusStore _store;
 
+    private IEnumerable<DeviceReportingStatus> _statuses;
+
     protected override void OnInitialized()
     {
         Logger.LogInformation("App initialized ...");
 
         _store = new VolatileDeviceStatusStore(StoreLogger);
+        _statuses = _store.GetDeviceStatuses();
 
         var path = NavigationManager.ToAbsoluteUri(IMonitorHubServer.path);
         Logger.LogInformation($"Using MonitorHub at {path}");
@@ -55,6 +58,7 @@
         {
             Logger.LogInformation("ReceiveDeviceHeartbeatUpdate callback {HeartBeatDto}", hearbeatDto);
             _ = _store.UpdateHeartbeat(hearbeatDto.DeviceId, hearbeatDto.ReceivedAt);
+            _statuses = _store.GetDeviceStatuses().OrderBy(status => status.DeviceId);
             StateHasChanged();
         });
 
@@ -62,6 +66,7 @@
         {
             Logger.LogInformation("ReceiveDeviceStatusUpdate callback: {StatusDto}", statusDto);
             _store.SetDeviceStatus(DeviceReportingStatus.FromStatusDto(statusDto));
+            _statuses = _store.GetDeviceStatuses().OrderBy(status => status.DeviceId);
             StateHasChanged();
         });
 
@@ -72,9 +77,9 @@
             {
                 _store.SetDeviceStatus(DeviceReportingStatus.FromStatusDto(statusDto));
             }
+            _statuses = _store.GetDeviceStatuses().OrderBy(status => status.DeviceId);
             StateHasChanged();
         });
-
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
