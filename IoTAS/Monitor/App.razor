@@ -11,7 +11,6 @@
 @inject ILogger<VolatileDeviceStatusStore> StoreLogger
 
 @implements IAsyncDisposable
-@implements IMonitorHub
 
 <Router AppAssembly="@typeof(Program).Assembly" PreferExactMatches="@true">
     <Found Context="routeData">
@@ -30,6 +29,8 @@
 
 @code {
 
+    private bool _isDisposed;
+
     private HubConnection _hubConnection;
 
     private Uri _hubPath;
@@ -44,13 +45,16 @@
     {
         Logger.LogInformation("App initialized ...");
 
+        // To early to call StateHasChanged, so just simple assignments
         _store = new VolatileDeviceStatusStore(StoreLogger);
         _deviceStatusList = _store.GetDevicesStatusList();
         _connectionStatusText = "Initialising";
 
         _hubPath = NavigationManager.ToAbsoluteUri(IMonitorHubServer.path);
 
-        Logger.LogInformation($"Using MonitorHub at {_hubPath}");
+        Logger.LogInformation(
+            nameof(OnInitialized) + " - " +
+            $"Using MonitorHub at {_hubPath}");
 
         // Create and configure a HubConnection, but do not yet start it to avoid making
         // the user wait. Delay start to after the FirstRender.
@@ -58,55 +62,50 @@
             .WithUrl(_hubPath)
             .Build();
 
-        // Register the IMonitorHub callback methods
-        _hubConnection.On<SrvToMonDeviceHeartbeatDto>(nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate), ReceiveDeviceHeartbeatUpdate);
-        _hubConnection.On<SrvToMonDeviceStatusDto>(nameof(IMonitorHub.ReceiveDeviceStatusUpdate), ReceiveDeviceStatusUpdate);
-        _hubConnection.On<SrvToMonDeviceStatusDto[]>(nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot), ReceiveDeviceStatusesSnapshot);
+        // Register the IMonitorHub RPC methods
+        _hubConnection.On<SrvToMonDeviceHeartbeatDto>(
+            nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate), ReceiveDeviceHeartbeatUpdate);
+        _hubConnection.On<SrvToMonDeviceStatusDto>(
+            nameof(IMonitorHub.ReceiveDeviceStatusUpdate), ReceiveDeviceStatusUpdate);
+        _hubConnection.On<SrvToMonDeviceStatusDto[]>(
+            nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot), ReceiveDeviceStatusesSnapshot);
+
+        Logger.LogInformation(
+            nameof(OnInitialized) + " - " +
+            "Remote Procedure Call implementations have been registered on the HubConnection");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await StartAndConfigureConnectionAsync();
+            await ConnectWithRetryAsync();
+
+            if (_hubConnection.State == HubConnectionState.Connected)
+            {
+                _hubConnection.Closed += ConnectionClosedHandler;
+                _hubConnection.Reconnecting += ConnectionReconnectingHandler;
+                _hubConnection.Reconnected += ConnectionReconnectedHandler;
+
+                Logger.LogInformation(
+                    nameof(OnAfterRenderAsync) + " - " +
+                    "HubConnection Life-cycle callbacks have been registered on the HubConnection");
+            }
+            else
+            {
+                // We should never come here, but as a defense-in-depth measure it's fine imho
+                _connectionStatusText = $"Failed to connect to Hub at {_hubPath.ToString()}";
+                StateHasChanged();
+
+                Logger.LogCritical(
+                    nameof(OnAfterRenderAsync) + " - " +
+                    _connectionStatusText);
+            };
         }
     }
 
     /// <summary>
-    /// Starts the HubConnection and configures it for lifecycle event handling, including automatic reconnection
-    /// </summary>
-    /// <param name="connection">The HubConnection that needs to be started and configured</param>
-    /// <param name="token">Cancellation token to end the Task</param>
-    /// <returns>
-    /// <see langword="true"/> upon succesful connection startup, <see langword="false"/> otherwise
-    /// </returns>
-    private async Task StartAndConfigureConnectionAsync()
-    {
-        await ConnectWithRetryAsync();
-
-        if (_hubConnection.State == HubConnectionState.Connected)
-        {
-            _hubConnection.Closed += ConnectionClosedHandler;
-            _hubConnection.Reconnecting += ConnectionReconnectingHandler;
-            _hubConnection.Reconnected += ConnectionReconnectedHandler;
-
-            Logger.LogInformation(
-                nameof(StartAndConfigureConnectionAsync) + " - " +
-                "Life-cycle callbacks have been registered");
-        }
-        else
-        {
-            _connectionStatusText = $"Failed to connect to Hub at {_hubPath.ToString()}";
-            StateHasChanged();
-
-            Logger.LogCritical(
-                nameof(StartAndConfigureConnectionAsync) + " - " +
-                _connectionStatusText);
-        }
-    }
-
-    /// <summary>
-    /// (Re-)Starts the HubConnection untill succesfull using increasing backoff delays upon Start failures
+    /// (Re-)Starts the HubConnection untill succesfull, using increasing backoff delays upon Start failures
     /// </summary>
     private async Task ConnectWithRetryAsync()
     {
@@ -116,38 +115,31 @@
         // Keep trying to until we can start or the browser tab is closed by the user
         while (_hubConnection.State != HubConnectionState.Connected)
         {
+            string message;
+
             try
             {
-                _connectionStatusText = $"Trying to connect to Hub at {_hubPath.ToString()}...";
-                StateHasChanged();
-
+                message = $"Trying to connect to Hub at {_hubPath.ToString()}...";
+                SetStatusText(message);
                 Logger.LogInformation(
                     nameof(ConnectWithRetryAsync) + " - " +
-                    _connectionStatusText);
+                    message);
 
                 await _hubConnection.StartAsync();
 
-                _connectionStatusText = $"Connected to Hub at {_hubPath.ToString()}";
-                StateHasChanged();
-
+                message = $"Connected to Hub at {_hubPath.ToString()}";
+                SetStatusText(message);
                 Logger.LogInformation(
                     nameof(ConnectWithRetryAsync) + " - " +
-                    _connectionStatusText);
+                    message);
 
-                MonToSrvRegistrationDto registrationDto = new(); // currently empty --> default record returned
-                await _hubConnection.SendAsync(nameof(IMonitorHubServer.RegisterMonitorClient), registrationDto);
-                Logger.LogInformation(
-                    nameof(OnAfterRenderAsync) + " - " +
-                    "Monitor has been registered with the Server with {ConnectionId}",
-                    _hubConnection.ConnectionId);
+                await RegisterMonitorCient();
             }
             catch (Exception e)
             {
                 _store.Clear();
-                _deviceStatusList = _store.GetDevicesStatusList();
-
-                _connectionStatusText = $"Error while connecting to Hub: {e.Message} - retrying soon";
-                StateHasChanged();
+                SetStatusList();
+                SetStatusText($"Error while connecting to Hub: {e.Message} - retrying soon");
 
                 random ??= new Random();
                 int delay = random.Next(2500, 5000) + delayIncrease;
@@ -163,27 +155,37 @@
         }
     }
 
+    private async Task RegisterMonitorCient()
+    {
+        MonToSrvRegistrationDto registrationDto = new(); // currently empty --> default record returned
+        await _hubConnection.SendAsync(nameof(IMonitorHubServer.RegisterMonitorClient), registrationDto);
+
+        Logger.LogInformation(
+            nameof(RegisterMonitorCient) + " - " +
+            "Monitor has been registered at the Server with {ConnectionId}",
+            _hubConnection.ConnectionId);
+    }
+
     private Task ConnectionClosedHandler(Exception e)
     {
+        string message;
+
         // cannot show old data
         _store.Clear();
-        _deviceStatusList = _store.GetDevicesStatusList();
+        SetStatusList();
 
         if (e is null)
         {
-            _connectionStatusText = $"Connection to Hub at {_hubPath.ToString()} closed by Server";
-            StateHasChanged();
-
+            message = $"Connection to Hub at {_hubPath.ToString()} closed by Server";
+            SetStatusText(message);
             Logger.LogWarning(
                 nameof(ConnectionClosedHandler) + " - " +
-                _connectionStatusText);
+                message);
 
             return Task.CompletedTask;
         }
 
-        _connectionStatusText = $"Error {e.Message} on Connection to Hub at {_hubPath.ToString()}";
-        StateHasChanged();
-
+        SetStatusText($"Error {e.Message} on Connection to Hub at {_hubPath.ToString()}");
         Logger.LogWarning(
             e,
             nameof(ConnectionClosedHandler) + " - " +
@@ -194,100 +196,113 @@
 
     private Task ConnectionReconnectedHandler(string connectionId)
     {
-        _connectionStatusText = "Connection reconnected";
-        StateHasChanged();
-
+        string message = "Connection reconnected";
+        SetStatusText(message);
         Logger.LogInformation(
             nameof(ConnectionReconnectedHandler) + " - " +
-            _connectionStatusText);
+            message);
 
         return Task.CompletedTask;
     }
 
     private Task ConnectionReconnectingHandler(Exception ex)
     {
-        _connectionStatusText = "Connection reconnecting ...";
+        string message = "Connection reconnecting ...";
+        SetStatusText(message);
         Logger.LogInformation(
             nameof(ConnectionReconnectingHandler) + " - " +
-            _connectionStatusText);
+            message);
 
         return Task.CompletedTask;
     }
 
-    /// <summary>
-    /// RPC called by Server to send Device Status to a Monitor
-    ///</summary>
-    ///<param name="statusDto">The Device status attributes</param>
-    /// <returns>A Task</returns>
-    public Task ReceiveDeviceStatusUpdate(SrvToMonDeviceStatusDto statusDto)
-    {
-        Logger.LogInformation("ReceiveDeviceStatusUpdate callback: {StatusDto}", statusDto);
-        _store.SetDeviceStatus(DeviceReportingStatus.FromStatusDto(statusDto));
-        _deviceStatusList = _store.GetDevicesStatusList().OrderBy(status => status.DeviceId);
-        StateHasChanged();
 
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// RPC called by Server to notify Monitor(s) of a received Device Heartbeat
-    ///</summary>
-    ///<param name="hearbeatDto">Heartbead DTO</param>
-    /// <returns>A Task</returns>
-    public Task ReceiveDeviceHeartbeatUpdate(SrvToMonDeviceHeartbeatDto hearbeatDto)
-    {
-        // Logger.LogInformation("ReceiveDeviceHeartbeatUpdate callback {HeartBeatDto}", hearbeatDto);
-        _ = _store.UpdateHeartbeat(hearbeatDto.DeviceId, hearbeatDto.ReceivedAt);
-        _deviceStatusList = _store.GetDevicesStatusList().OrderBy(status => status.DeviceId);
-        StateHasChanged();
-
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// RPC called by Server to send multiple Device statuses to a Monitor,
-    /// e.g. due to a received Monitor registration
-    ///</summary>
-    ///<param name="statusListDto">A List of Device status DTOs</param>
-    /// <returns>A Task</returns>
-    /// <remarks>
-    /// When there are too many Devices, the server may send this message
-    /// multiple times (i.e. in chunks). The Server  guarantee that it
-    /// will not send duplicates in the chunks and that it will not send a
-    /// DeviceHearbeatUpdate until the comlete list with known Devices has
-    /// been sent.
-    ///</remarks>
-    public Task ReceiveDeviceStatusesSnapshot(SrvToMonDeviceStatusDto[] statusListDto)
+    // Called remotely through SignalR by Server to notify Monitors it received a Device Registration
+    private Task ReceiveDeviceStatusUpdate(SrvToMonDeviceStatusDto statusDto)
     {
         Logger.LogInformation(
-            "ReceiveDeviceStatusesSnapshot callback {statusListDto.Count} Devices in List", 
-            statusListDto.Count());
+            nameof(ReceiveDeviceStatusUpdate) + " - " +
+            "Received: {StatusDto}",
+            statusDto);
+
+        _store.SetDeviceStatus(DeviceReportingStatus.FromStatusDto(statusDto));
+        SetStatusList();
+
+        return Task.CompletedTask;
+    }
+
+    // Called remotely through SignalR by Server to notify Monitors it received a Device Heartbeat
+    private Task ReceiveDeviceHeartbeatUpdate(SrvToMonDeviceHeartbeatDto hearbeatDto)
+    {
+        Logger.LogDebug(
+             nameof(ReceiveDeviceHeartbeatUpdate) + " - " +
+             "Received {HeartBeatDto}",
+             hearbeatDto);
+
+        _ = _store.UpdateHeartbeat(hearbeatDto.DeviceId, hearbeatDto.ReceivedAt);
+        SetStatusList();
+
+        return Task.CompletedTask;
+    }
+
+    // Called remotely through SignalR by Server to send multiple Device statuses to a Monitor
+    // upon a received Monitor Registration from that Monitor
+    private Task ReceiveDeviceStatusesSnapshot(SrvToMonDeviceStatusDto[] statusListDto)
+    {
+        Logger.LogInformation(
+            nameof(ReceiveDeviceStatusesSnapshot) + " - " +
+            $"Received {statusListDto.Count()} Devices in List");
 
         foreach (var statusDto in statusListDto)
         {
             _store.SetDeviceStatus(DeviceReportingStatus.FromStatusDto(statusDto));
         }
-
-        _deviceStatusList = _store.GetDevicesStatusList().OrderBy(status => status.DeviceId);
-        StateHasChanged();
+        SetStatusList();
 
         return Task.CompletedTask;
+    }
+
+    // Sync the CascadingDeviceStatusList with the _store and signal StateHasChanged
+    private void SetStatusList()
+    {
+        _deviceStatusList = _store.GetDevicesStatusList().OrderBy(status => status.DeviceId);
+        StateHasChanged();
+    }
+
+    // Update the CascadingConnectionStatusText and signal StateHasChanged
+    private void SetStatusText(string message)
+    {
+        _connectionStatusText = message;
+        StateHasChanged();
     }
 
     public async ValueTask DisposeAsync()
     {
         if (_hubConnection is not null)
         {
-            _hubConnection.Remove(nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate));
-            _hubConnection.Remove(nameof(IMonitorHub.ReceiveDeviceStatusUpdate));
-            _hubConnection.Remove(nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot));
-
             _hubConnection.Closed -= ConnectionClosedHandler;
             _hubConnection.Reconnected -= ConnectionReconnectedHandler;
             _hubConnection.Reconnecting -= ConnectionReconnectingHandler;
 
-            await _hubConnection.DisposeAsync();
-            Logger.LogWarning("Disposed ...");
+            _hubConnection.Remove(nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate));
+            _hubConnection.Remove(nameof(IMonitorHub.ReceiveDeviceStatusUpdate));
+            _hubConnection.Remove(nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot));
+
+            if (_isDisposed)
+            {
+                Logger.LogWarning(
+                    nameof(DisposeAsync) + " - " +
+                    "Already disposed ...");
+            }
+            else
+            {
+                await _hubConnection.DisposeAsync();
+                _isDisposed = true;
+
+                Logger.LogWarning(
+                    nameof(DisposeAsync) + " - " +
+                    "Disposed ...");
+            }
         }
     }
 }
