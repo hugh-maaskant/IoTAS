@@ -1,0 +1,44 @@
+﻿table {
+    width:100%;
+}
+
+table, th, td {
+    border: 1px solid grey;
+    border-collapse: collapse;
+}
+
+th {
+    padding: 8px 16px;
+    text-align: left;
+}
+
+td {
+    padding: 4px 16px;
+}
+
+.clock {
+    text-align:end;
+}
+
+.header {
+    font-size: 1.2em;
+    font-weight: 700;
+    margin-bottom: 1em;
+}
+
+.ontime {
+    color: darkgreen;
+}
+
+.late {
+    color: darkorange;
+}
+
+.overdue {
+    color: firebrick;
+}
+
+.summary {
+    font-weight: 600;
+}
+

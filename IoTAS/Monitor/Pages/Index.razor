@@ -1,34 +1,114 @@
 ﻿@page "/"
 
+@using System.Threading;
+
 @using Microsoft.Extensions.Logging;
 
 @using IoTAS.Shared.DevicesStatusStore
 
-@inject ILogger<Index> Logger
+@implements IAsyncDisposable
 
-<h3>Device Status List</h3>
-@if (DeviceStatusses is null || DeviceStatusses.Count() == 0)
+@inject ILogger<Index> Logger
+<div class="clock">@updatedAt.ToString(dateTimeFormat)</div>
+
+<div class="header">Device Status List</div>
+
+@if (DeviceStatusList is null || DeviceStatusList.Count() == 0)
 {
-    <p>Currently there are no know Devices ...</p>
+    <p>Currently there are no Devices to show ...</p>
 }
 else
 {
-    <ul>
-        @foreach (var deviceStatus in DeviceStatusses)
-        {
-            <li>@deviceStatus.ToString()</li>
-        }
-    </ul>
+    string colorClass;
+
+    ontimeCount = 0;
+    lateCount = 0;
+    overdueCount = 0;
+
+    <table>
+        <thead>
+            <tr>
+                <th>DeviceId</th>
+                <th>First Registered</th>
+                <th>Last Registered</th>
+                <th>Last Seen</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var deviceStatus in DeviceStatusList)
+            {
+                TimeSpan howLongAgo = updatedAt - deviceStatus.LastSeenAt;
+                int secondsAgo = (int)Math.Round(howLongAgo.TotalSeconds);
+                switch (secondsAgo)
+                {
+                    case <= 15:
+                        colorClass = "ontime";
+                        ontimeCount++;
+                        break;
+
+                    case <= 30:
+                        colorClass = "late";
+                        lateCount++;
+                        break;
+
+                    default:
+                        colorClass = "overdue";
+                        overdueCount++;
+                        break;
+                }
+                <tr>
+                    <td style="text-align:right;">@deviceStatus.DeviceId</td>
+                    <td>@deviceStatus.FirstRegisteredAt.ToString(dateTimeFormat)</td>
+                    <td>@deviceStatus.LastRegisteredAt.ToString(dateTimeFormat)</td>
+                    <td class=@colorClass>@deviceStatus.LastSeenAt.ToString(dateTimeFormat)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p class="summary">
+        @if (ontimeCount > 0)
+        {<span>On time: <span class="ontime">@ontimeCount</span>; </span>}
+        @if (lateCount > 0)
+        {<span>Late: <span class="late">@lateCount</span>; </span>}
+        @if (overdueCount > 0)
+        {<span>Overdue: <span class="overdue">@overdueCount</span>;</span>}
+    </p>
 }
 
 @code {
 
+    private static readonly string dateTimeFormat = "yyyy-MM-dd  HH:mm:ss";
+
+    private Timer timer;
+
+    private DateTime updatedAt;
+
+    private int ontimeCount;
+    private int lateCount = 0;
+    private int overdueCount = 0;
+
     [CascadingParameter(Name = "CascadingDeviceStatusList")]
-    public  IEnumerable<DeviceReportingStatus> DeviceStatusses { get; set; }
+    public IEnumerable<DeviceReportingStatus> DeviceStatusList { get; set; }
 
     protected override void OnInitialized()
     {
+        updatedAt = DateTime.Now;
+
+        timer = new System.Threading.Timer(async _ =>
+        {
+            updatedAt = DateTime.Now;
+            await InvokeAsync(StateHasChanged);
+        }, null, 1000, 1000);
+
         Logger.LogInformation($"{nameof(Index)} initialised ...");
     }
 
-}
+    public async ValueTask DisposeAsync()
+    {
+        if (timer is not null)
+        {
+            await timer.DisposeAsync();
+        }
+    }
+    }
