@@ -19,7 +19,7 @@
 }
 else
 {
-    string colorClass;
+    string cssColor;
 
     ontimeCount = 0;
     lateCount = 0;
@@ -42,17 +42,17 @@ else
                 switch (secondsAgo)
                 {
                     case <= 15:
-                        colorClass = "ontime";
+                        cssColor = "ontime";
                         ontimeCount++;
                         break;
 
                     case <= 30:
-                        colorClass = "late";
+                        cssColor = "late";
                         lateCount++;
                         break;
 
                     default:
-                        colorClass = "overdue";
+                        cssColor = "overdue";
                         overdueCount++;
                         break;
                 }
@@ -60,7 +60,7 @@ else
                     <td style="text-align:right;">@deviceStatus.DeviceId</td>
                     <td>@deviceStatus.FirstRegisteredAt.ToString(dateTimeFormat)</td>
                     <td>@deviceStatus.LastRegisteredAt.ToString(dateTimeFormat)</td>
-                    <td class=@colorClass>@deviceStatus.LastSeenAt.ToString(dateTimeFormat)</td>
+                    <td class=@cssColor>@deviceStatus.LastSeenAt.ToString(dateTimeFormat)</td>
                 </tr>
             }
         </tbody>
