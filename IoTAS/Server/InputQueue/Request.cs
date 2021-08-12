@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text;
+
 using IoTAS.Shared.Hubs;
 
 namespace IoTAS.Server.InputQueue
@@ -14,6 +13,8 @@ namespace IoTAS.Server.InputQueue
     /// </remarks>
     public record Request(DateTime ReceivedAt, string ConnectionId, BaseHubInDto ReceivedDto)
     {
+        private static readonly string dateTimeFormat = "yyyy-MM-dd HH:mm:ss";
+
         /// <summary>
         /// Create a Request from an incoming Hub call
         /// </summary>
@@ -24,5 +25,28 @@ namespace IoTAS.Server.InputQueue
         {
             return new Request(DateTime.Now, connectionId, receivedDto);
         }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new();
+
+            sb.Append(nameof(Request));
+            sb.Append(" { ");
+            sb.Append(nameof(ReceivedAt));
+            sb.Append(" = ");
+            sb.Append(ReceivedAt.ToString(dateTimeFormat));
+            sb.Append(", ");
+            sb.Append(nameof(ConnectionId));
+            sb.Append(" = ");
+            sb.Append(ConnectionId);
+            sb.Append(", ");
+            sb.Append(nameof(ReceivedDto));
+            sb.Append(" = ");
+            sb.Append(ReceivedDto.ToString());
+            sb.Append(" } ");
+
+            return sb.ToString();
+        }
+
     }  
 }

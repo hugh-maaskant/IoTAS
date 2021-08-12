@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace IoTAS.Shared.DevicesStatusStore
 {
@@ -16,9 +15,9 @@ namespace IoTAS.Shared.DevicesStatusStore
 
         private readonly Dictionary<int, DeviceReportingStatus> store = new();
 
-        public VolatileDeviceStatusStore(ILogger<VolatileDeviceStatusStore> logger)
+        public VolatileDeviceStatusStore(ILogger<VolatileDeviceStatusStore>? logger)
         {
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.logger = logger ?? NullLogger<VolatileDeviceStatusStore>.Instance;
 
             logger.LogInformation("Store created");
         }

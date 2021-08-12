@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace IoTAS.Server.InputQueue
 {
@@ -25,9 +27,9 @@ namespace IoTAS.Server.InputQueue
 
         private readonly ILogger<HubsInputQueueService> logger;
 
-        public HubsInputQueueService(ILogger<HubsInputQueueService> logger)
+        public HubsInputQueueService(ILogger<HubsInputQueueService>? logger)
         {
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.logger = logger ?? NullLogger< HubsInputQueueService>.Instance;
 
             this.logger.LogInformation("Created");
         }

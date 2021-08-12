@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Net;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using IoTAS.Shared.Hubs;
 using IoTAS.Server.InputQueue;
@@ -17,9 +16,9 @@ namespace IoTAS.Server.Hubs
 
         private readonly IHubsInputQueue queueService;
 
-        public DeviceHub(ILogger<DeviceHub> logger, IHubsInputQueue queueService)
+        public DeviceHub(ILogger<DeviceHub>? logger, IHubsInputQueue queueService)
         {
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.logger = logger ?? NullLogger<DeviceHub>.Instance;
             this.queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
         }
 

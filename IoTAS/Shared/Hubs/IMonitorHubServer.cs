@@ -22,9 +22,9 @@ namespace IoTAS.Shared.Hubs
         public const string path = "/monitor-hub";
 
         /// <summary>
-        /// Register a Monitor Client in the Server.
+        /// Register a Monitor Client in the Server
         /// </summary>
-        /// <param name="dtoIn">The received DTA as passed by SignalR</param>
+        /// <param name="dtoIn">The received DTO as passed by SignalR</param>
         /// <returns>A Task</returns>
         Task RegisterMonitorClient(MonToSrvRegistrationDto dtoIn);
     }

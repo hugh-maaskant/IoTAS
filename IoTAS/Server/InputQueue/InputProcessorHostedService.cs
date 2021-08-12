@@ -5,9 +5,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using IoTAS.Shared.DevicesStatusStore;
 using IoTAS.Shared.Hubs;
@@ -22,6 +23,8 @@ namespace IoTAS.Server.InputQueue
     /// </summary>
     public sealed class InputProcessorHostedService : BackgroundService
     {
+        private const string registeredMonitorssGroup = "RegisteredMonitors";
+
         private readonly ILogger<InputProcessorHostedService> logger;
 
         private readonly IHubsInputQueue inputQueue;
@@ -36,10 +39,11 @@ namespace IoTAS.Server.InputQueue
             IDeviceStatusStore store,
             IHubContext<MonitorHub, IMonitorHub> monitorHubContext)
         {
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.logger = logger ?? NullLogger<InputProcessorHostedService>.Instance;
             this.inputQueue = inputQueue ?? throw new ArgumentNullException(nameof(inputQueue));
             this.store = store ?? throw new ArgumentNullException(nameof(store));
             this.monitorHubContext = monitorHubContext ?? throw new ArgumentNullException(nameof(monitorHubContext));
+            
             logger.LogDebug("Created");
         }
 
@@ -144,7 +148,18 @@ namespace IoTAS.Server.InputQueue
 
             DeviceReportingStatus status = store.UpdateRegistration(dtoIn.DeviceId, request.ReceivedAt);
             var dtoOut = status.ToStatusDto();
-            await monitorHubContext.Clients.All.ReceiveDeviceStatusUpdate(dtoOut);
+
+            try
+            {
+                await monitorHubContext.Clients.Group(registeredMonitorssGroup).ReceiveDeviceStatusUpdate(dtoOut);
+            }
+            catch (Exception e)
+            {
+                logger.LogWarning(
+                    e,
+                    nameof(ProcessDeviceRegistration) + " - " +
+                    $"Error in {nameof(IMonitorHub.ReceiveDeviceStatusUpdate)} multicast");
+            }
 
             logger.LogDebug(
                 nameof(ProcessDeviceRegistration) + " - " +
@@ -167,8 +182,18 @@ namespace IoTAS.Server.InputQueue
 
             DeviceReportingStatus status = store.UpdateHeartbeat(dtoIn.DeviceId, request.ReceivedAt);
             var dtoOut = status.ToHeartbeatDto();
-            await monitorHubContext.Clients.All.ReceiveDeviceHeartbeatUpdate(dtoOut);
 
+            try
+            {
+                await monitorHubContext.Clients.Group(registeredMonitorssGroup).ReceiveDeviceHeartbeatUpdate(dtoOut);
+            }
+            catch (Exception e)
+            {
+                logger.LogWarning(
+                    e,
+                    nameof(ProcessDeviceHeartbeat) +
+                    $"Error in {nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate)} multicast");
+            }
             logger.LogDebug(
                 nameof(ProcessDeviceHeartbeat) + " - " +
                 "Handled {Request}",
@@ -192,7 +217,22 @@ namespace IoTAS.Server.InputQueue
                 .Select(status => status.ToStatusDto())
                 .ToArray();
 
-            await monitorHubContext.Clients.Client(request.ConnectionId).ReceiveDeviceStatusesSnapshot(dtoOut);
+            // Provide the registering Monitor with the current status of all Devices
+            // If the number of devices gets too big, this could conditially be done in chunks
+            try
+            {
+                await monitorHubContext.Clients.Client(request.ConnectionId).ReceiveDeviceStatusesSnapshot(dtoOut);
+            }
+            catch (Exception e)
+            {
+                logger.LogWarning(
+                    e,
+                    nameof(ProcessMonitorRegistration) +
+                    $"Error in {nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot)} singlecast");
+            }
+
+            // Ensure it will get future status updates
+            await monitorHubContext.Groups.AddToGroupAsync(request.ConnectionId, registeredMonitorssGroup);
 
             logger.LogDebug(
                 nameof(ProcessMonitorRegistration) + " - " +

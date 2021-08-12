@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Net;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
 
 using IoTAS.Shared.Hubs;
 using IoTAS.Server.InputQueue;
@@ -20,9 +20,9 @@ namespace IoTAS.Server.Hubs
 
         private readonly IHubsInputQueue queueService;
 
-        public MonitorHub(ILogger<IMonitorHub> logger, IHubsInputQueue queueService)
+        public MonitorHub(ILogger<IMonitorHub>? logger, IHubsInputQueue queueService)
         {
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.logger = logger ?? NullLogger<IMonitorHub>.Instance;
             this.queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
         }
 
@@ -36,11 +36,11 @@ namespace IoTAS.Server.Hubs
             await base.OnConnectedAsync();
         }
 
-        public override async Task OnDisconnectedAsync(Exception e)
+        public override async Task OnDisconnectedAsync(Exception? e)
         {
             if (e == null)
             {
-                // It's OK for Monitors to go awai from their web-page
+                // It's OK for Monitors to go away from their web-page
                 logger.LogInformation(
                     nameof(OnDisconnectedAsync) + " - " +
                     "Monitor on ConnectionId {ConnectionId} disconnected", 

@@ -2,6 +2,7 @@
 
 @using Microsoft.AspNetCore.SignalR.Client;
 @using Microsoft.Extensions.Logging;
+@using Microsoft.Extensions.Logging.Abstractions;
 
 @using IoTAS.Shared.DevicesStatusStore;
 @using IoTAS.Shared.Hubs;
@@ -43,6 +44,8 @@
 
     protected override void OnInitialized()
     {
+        if (Logger is null) Logger = NullLogger<App>.Instance;
+
         Logger.LogInformation("App initialized ...");
 
         // To early to call StateHasChanged, so just simple assignments

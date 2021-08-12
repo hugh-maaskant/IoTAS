@@ -362,5 +362,8 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+# Windows Thumbs.db
+Thumbs.db
+
 # MacOS .DS_Store files (see https://en.wikipedia.org/wiki/.DS_Store)
 .DS_Store
