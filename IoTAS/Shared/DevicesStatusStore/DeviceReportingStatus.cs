@@ -12,7 +12,7 @@ namespace IoTAS.Shared.DevicesStatusStore
     /// Records the currently observed Device status, which is based on registrations 
     /// and heartbeat DeviceHub input received
     /// </summary>
-    public record DeviceReportingStatus
+    public sealed record DeviceReportingStatus
     (
         // Also the key to the record
         int DeviceId,

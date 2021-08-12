@@ -5,5 +5,5 @@ namespace IoTAS.Shared.Hubs
     /// Device Attributes that need to be passed to the Server
     /// during Device Registration.
     /// </summary>
-    public record DevToSrvDeviceRegistrationDto(int DeviceId) : BaseHubInDto;
+    public sealed record DevToSrvDeviceRegistrationDto(int DeviceId) : BaseHubInDto;
 }

@@ -9,7 +9,7 @@ namespace IoTAS.Shared.Hubs
     /// Send as multicast to all Monitors when the Server receives a Device Registration
     /// and as a singlecast List with all known Devices to the registering Monitor
     /// </remarks>
-    public record SrvToMonDeviceStatusDto
+    public sealed record SrvToMonDeviceStatusDto
     (
         int DeviceId,               // The Id of the Device
         DateTime FirstRegisteredAt, // The very first registration DateTime

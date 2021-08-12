@@ -13,7 +13,7 @@ using Serilog.Templates.Themes;
 
 namespace IoTAS.Server
 {
-    public class Program
+    public sealed class Program
     {
         private static readonly string consoleLogFormat =
             "[{@t:HH:mm:ss} {@l:u3}] " +

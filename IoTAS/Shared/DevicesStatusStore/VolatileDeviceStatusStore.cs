@@ -9,7 +9,7 @@ namespace IoTAS.Shared.DevicesStatusStore
     /// <summary>
     /// Volatile (in memmory) implementation for IDeviceStatusStore
     /// </summary>
-    public class VolatileDeviceStatusStore : IDeviceStatusStore
+    public sealed class VolatileDeviceStatusStore : IDeviceStatusStore
     {
         private readonly ILogger<VolatileDeviceStatusStore> logger;
 

@@ -15,7 +15,7 @@ using IoTAS.Server.InputQueue;
 
 namespace IoTAS.Server
 {
-    public class Startup
+    public sealed class Startup
     {
         public Startup(IConfiguration configuration)
         {

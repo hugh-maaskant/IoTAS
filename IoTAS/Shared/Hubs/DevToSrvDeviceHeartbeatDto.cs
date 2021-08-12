@@ -10,5 +10,5 @@ namespace IoTAS.Shared.Hubs
     /// Device Attributes that need to be passed to the Server
     /// for a Device Heartbeat
     /// </summary>
-    public record DevToSrvDeviceHeartbeatDto(int DeviceId) : BaseHubInDto;
+    public sealed record DevToSrvDeviceHeartbeatDto(int DeviceId) : BaseHubInDto;
 }

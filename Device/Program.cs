@@ -8,7 +8,7 @@ using IoTAS.Shared.Hubs;
 
 namespace IoTAS.Device
 {
-    class Program
+    public sealed class Program
     {
         // Hardcoded for now, possibly get from configuration lateron
         private static readonly string hubUrlHttps = "https://localhost:5001" + IDeviceHubServer.path;
@@ -199,12 +199,14 @@ namespace IoTAS.Device
             return StartAndRegisterAsync();
         }
 
+        // Currently we do not use SignalR's auto-reconnect, so we shoeldd never get here ...
         private static Task ConnectionReconnectingHandler(Exception e)
         {
             Console.WriteLine($"Reconnecting to server due to error: {e.Message}");
             return Task.CompletedTask;
         }
 
+        // Currently we do not use SignalR's auto-reconnect, so we shoeldd never get here ...
         private static Task ConnectionReconnectedHandler(string newId)
         {
             Console.WriteLine($"Reconnected to server, connectionId = \"{newId}\"");
@@ -214,8 +216,7 @@ namespace IoTAS.Device
         /// <summary>
         /// Teardown and Dispose connection
         /// </summary>
-        /// <param name="connection">The connection to teardown</param>
-        /// <returns></returns>
+        /// <returns>A Task</returns>
         private static async Task TeardownConnectionAsync()
         {
             Console.WriteLine($"Tearing down connection ...");
