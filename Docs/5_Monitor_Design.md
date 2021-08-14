@@ -11,8 +11,8 @@ To ensure that the Monitor keeps connected, and thus keeps receiving updates fro
 This allows the user to navigate away from the main status page to other pages in the App and then return to the Monitor page. 
 It also paves the way for a potential summary component and pages with command actions to send to the Server.
 
-It also means that the initialization code for the connection should be delayed until after the App renders, as it wouldd otherwise further delay the App's initialization, leaving the user staring at a "Loading ..." page.
-Thus the real initialization is done in the ```App.OnAfterRender``` callback, and only when ```firstRender``` is ```true```.
+It also means that the initialization code for the connection should be delayed until after the App renders, as it would otherwise further delay the App's initialization, leaving the user staring at a "Loading ..." page even longer (or forever if connection startup fails).
+Thus the starting and registering is done in the ```App.OnAfterRender``` callback, and only when ```firstRender``` is ```true```.
 
 ```csharp
 protected override async Task OnAfterRenderAsync(bool firstRender){    if (firstRender)    {        bool operational = await StartConnectionAndRegisterAsync();        if (!operational)        {            // Failed to connect to and register on Hub
@@ -21,8 +21,8 @@ protected override async Task OnAfterRenderAsync(bool firstRender){    if (fir
 
 The actual behaviour of the connection handling is slightly different from that of the Device in the following ways:
 
-1. There is no Ctrl-C handling; thhe way to exit is to close the browser tab whichh will cleanup any connection
-2. When the Server closes the connection this will be shown to the user, but no reconnection attempt is made.
+1. There is no Ctrl-C handling; the way to exit is to close the browser tab, which will close and cleanup the connection.
+2. When the Server closes the connection no reconnection attempt is made, but it will be shown to the user.
 
 ### UI
 
