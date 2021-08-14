@@ -54,13 +54,13 @@ namespace IoTAS.Device
                 connection.Reconnecting += ConnectionReconnectingHandler;
                 connection.Reconnected += ConnectionReconnectedHandler;
 
-                bool started = await StartAndRegisterAsync();
-                if (started)
+                bool operational = await StartConnectionAndRegisterAsync();
+                if (operational)
                 {
-                    await StartHeartbeatAsync();
+                    await DoHeartbeatAsync();
                 }
                 
-                // We only get here after a cancellation on the tokenSource (from Cntrl-C)
+                // We only get here after a cancellation on the tokenSource (from CNTRL-C)
                 await TeardownConnectionAsync();
 
                 tokenSource.Dispose();
@@ -130,83 +130,106 @@ namespace IoTAS.Device
         #region HubConnection Management
 
         /// <summary>
-        /// (Re-)Starts the HubConnection untill succesfull
+        /// (Re-)Starts the HubConnection and (re-)registers untill succesful or cancelled
         /// </summary>
         /// <returns>
-        /// <see langword="true"/> upon succesful connection startup, <see langword="false"/> otherwise
+        /// <see langword="true"/> upon succesful connection startup and registration, <see langword="false"/> otherwise
         /// </returns>
-        private static async Task<bool> StartAndRegisterAsync()
+        private static async Task<bool> StartConnectionAndRegisterAsync()
         {
             Random random = null;
             int delayIncrease = 0;
 
-            // Keep trying to until we can start or the token source is canceled.
-            while (!tokenSource.IsCancellationRequested)
+            bool started = false;
+            bool registered = false;
+
+            // Keep trying until we can start and register or the token source is canceled.
+            while (!tokenSource.IsCancellationRequested && !registered)
             {
+                if (!started)
+                {
+                    started = await TryToStartConnectionAsync();
+                }
+
+                if (started)
+                {
+                    registered = await TryToRegisterDeviceAsync();
+                }
+
+                if (registered) return true;
+                if (tokenSource.IsCancellationRequested) return false;
+
+                // Either Start or Registration failed, backoff and try again ...
+                random ??= new Random();
+                int delay = random.Next(2500, 5000) + delayIncrease;
+                if (delayIncrease <= 20000) delayIncrease += 5000;
+
+                Console.WriteLine($"Retrying in {delay} msec");
                 try
                 {
-                    if (connection.State != HubConnectionState.Connected)
-                    {
-                        Console.WriteLine("Trying to connect ...");
-                        await connection.StartAsync(tokenSource.Token);
-                        Console.WriteLine("Connection has been established");
-                    }
-
-                    return await RegisterDeviceAsync();
+                   await Task.Delay(delay, tokenSource.Token);
                 }
                 catch (TaskCanceledException)
                 {
-                    // fall-thru and return false
+                    Console.WriteLine("ConnectWithRetryAsync cancelled while waiting to retry connection");
                 }
-                catch (Exception e)
-                {
-                    random ??= new Random();
-                    int delay = random.Next(2500, 5000) + delayIncrease;
-                    if (delayIncrease <= 20000) delayIncrease += 5000;
+            }
 
-                    Console.WriteLine($"Error while connecting: {e.Message}; retrying in {delay} msec");
-                    try
-                    {
-                        await Task.Delay(delay, tokenSource.Token);
-                    }
-                    catch (TaskCanceledException)
-                    {
-                        Console.WriteLine("ConnectWithRetryAsync cancelled while waiting to retry connection");
-                    }
-                }
+            // We only get here due to cancellation, all other conditions retry the operation(s)
+            return false;
+        }
+
+        private static async Task<bool> TryToStartConnectionAsync()
+        {
+            try
+            {
+                Console.WriteLine("Trying to start the connection ...");
+                await connection.StartAsync(tokenSource.Token);
+                Console.WriteLine("Connection has been started");
+
+                return true;
+            }
+            catch (TaskCanceledException)
+            {
+                Console.WriteLine("TryToStartConnectionAsync was cancelled");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error while starting the connection: {e.Message}");
             }
 
             return false;
         }
 
-        private static Task ConnectionClosedHandler(Exception e)
+        // Called by SignalR runtime on cancellation, error or keep-alive time-out
+        private static async Task ConnectionClosedHandler(Exception e)
         {
             if (tokenSource.IsCancellationRequested)
             {
-                Console.WriteLine("Connection to server closed due to cancellation");
-                return Task.CompletedTask;
+                Console.WriteLine("Connection to server closed due to cancellation - exiting");
+                return;
             }
 
-            if (e == null)
+            if (e is null)
             {
-                Console.WriteLine("Connection to server closed by Server - exiting");
-                return Task.CompletedTask;
+                Console.WriteLine("Connection closed by Server");
+            }
+            else
+            {
+                Console.WriteLine($"Connection to Server has been lost: {e.Message}");
             }
 
-            Console.WriteLine($"Connection to server has been lost: {e.Message}");
-
-            // try re-connecting and re-registering
-            return StartAndRegisterAsync();
+            _ = await StartConnectionAndRegisterAsync();
         }
 
-        // Currently we do not use SignalR's auto-reconnect, so we shoeldd never get here ...
+        // Currently we do not use SignalR's auto-reconnect, so we should never get here ...
         private static Task ConnectionReconnectingHandler(Exception e)
         {
             Console.WriteLine($"Reconnecting to server due to error: {e.Message}");
             return Task.CompletedTask;
         }
 
-        // Currently we do not use SignalR's auto-reconnect, so we shoeldd never get here ...
+        // Currently we do not use SignalR's auto-reconnect, so we should never get here ...
         private static Task ConnectionReconnectedHandler(string newId)
         {
             Console.WriteLine($"Reconnected to server, connectionId = \"{newId}\"");
@@ -220,7 +243,7 @@ namespace IoTAS.Device
         private static async Task TeardownConnectionAsync()
         {
             Console.WriteLine($"Tearing down connection ...");
-            if (connection == null) return;
+            if (connection is null) return;
 
             Console.WriteLine($"Removing life-cycle event handlers ...");
             connection.Closed -= ConnectionClosedHandler;
@@ -247,29 +270,28 @@ namespace IoTAS.Device
         #region Registration
 
         /// <summary>
-        /// Send a Device Registration message to the Server
+        /// Try to send a Device Registration message to the Server
         /// </summary>
         /// <returns><see langword="true"/> upon succesful registration, <see langword="false"/> otherwise</returns>
-        private static async Task<bool> RegisterDeviceAsync()
+        private static async Task<bool> TryToRegisterDeviceAsync()
         {
             try
             {
                 var dto = new DevToSrvDeviceRegistrationDto(deviceId);
                 Console.WriteLine($"Registering Device with Id {deviceId} ...");
                 await connection.InvokeAsync(nameof(IDeviceHubServer.RegisterDeviceClient), dto, tokenSource.Token);
-                Console.WriteLine("Registration succesfull");
+                Console.WriteLine("Registration succesful");
                 return true;
             }
             catch (TaskCanceledException)
             {
-                Console.WriteLine("RegisterDeviceAsync was cancelled");
-                return false;
+                Console.WriteLine("TryToRegisterDeviceAsync was cancelled");
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Error while registering: {e.Message}");
-                return false;
             }
+            return false;
         }
 
     #endregion Registration
@@ -279,10 +301,10 @@ namespace IoTAS.Device
         /// <summary>
         /// Sends Hearbeat messages with 15 second interval
         /// </summary>
-        /// <returns>A completed Task</returns>
-        private static async Task StartHeartbeatAsync()
+        /// <returns>A completed Task when cancelled</returns>
+        private static async Task DoHeartbeatAsync()
         {
-            Console.WriteLine($"{nameof(StartHeartbeatAsync)} Task started");
+            Console.WriteLine($"{nameof(DoHeartbeatAsync)} Task started");
             var dto = new DevToSrvDeviceHeartbeatDto(deviceId);
             int heartbeatNumber = 0;
 
@@ -297,31 +319,31 @@ namespace IoTAS.Device
                 }
                 catch (TaskCanceledException)
                 {
-                    Console.WriteLine($"{nameof(StartHeartbeatAsync)} cancelled while waiting to send heartbeat");
+                    Console.WriteLine($"{nameof(DoHeartbeatAsync)} cancelled while waiting to send heartbeat");
                     return;
                 }
 
-                // Send the heartbeat; in case of cancellation: end the Task
-                try
+                if (connection.State == HubConnectionState.Connected)
                 {
-                    if (connection.State == HubConnectionState.Connected)
+                    // Send the heartbeat; in case of cancellation: end the Task
+                    try
                     {
                         await connection.InvokeAsync(nameof(IDeviceHubServer.ReceiveDeviceHeartbeat), dto, tokenSource.Token);
-                        Console.WriteLine($"{nameof(StartHeartbeatAsync)} {heartbeatNumber} succeded");
+                        Console.WriteLine($"{nameof(DoHeartbeatAsync)} {heartbeatNumber} succeded");
                     }
-                    else
+                    catch (TaskCanceledException)
                     {
-                        Console.WriteLine($"{nameof(StartHeartbeatAsync)} {heartbeatNumber} skipped (no connection)");
+                        Console.WriteLine($"{nameof(DoHeartbeatAsync)} {heartbeatNumber} cancelled while sending heartbeat");
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"{nameof(DoHeartbeatAsync)} {heartbeatNumber} error while sending heartbeat: {e.Message}");
                     }
                 }
-                catch (TaskCanceledException)
+                else
                 {
-                    Console.WriteLine($"{nameof(StartHeartbeatAsync)} {heartbeatNumber} cancelled while sending heartbeat");
-                    return;
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"{nameof(StartHeartbeatAsync)} {heartbeatNumber} error while sending heartbeat: {e.Message}");
+                    Console.WriteLine($"{nameof(DoHeartbeatAsync)} {heartbeatNumber} skipped (no connection)");
                 }
             }
         }

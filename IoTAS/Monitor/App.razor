@@ -76,28 +76,27 @@
         Logger.LogInformation(
             nameof(OnInitialized) + " - " +
             "Remote Procedure Call implementations have been registered on the HubConnection");
+
+        // Register the connection life-cycle callback handlers
+        _hubConnection.Closed += ConnectionClosedHandler;
+        _hubConnection.Reconnecting += ConnectionReconnectingHandler;
+        _hubConnection.Reconnected += ConnectionReconnectedHandler;
+
+        Logger.LogInformation(
+            nameof(OnInitialized) + " - " +
+            "HubConnection Life-cycle callbacks have been registered on the HubConnection");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await ConnectWithRetryAsync();
+            bool operational = await StartConnectionAndRegisterAsync();
 
-            if (_hubConnection.State == HubConnectionState.Connected)
-            {
-                _hubConnection.Closed += ConnectionClosedHandler;
-                _hubConnection.Reconnecting += ConnectionReconnectingHandler;
-                _hubConnection.Reconnected += ConnectionReconnectedHandler;
-
-                Logger.LogInformation(
-                    nameof(OnAfterRenderAsync) + " - " +
-                    "HubConnection Life-cycle callbacks have been registered on the HubConnection");
-            }
-            else
+            if (!operational)
             {
                 // We should never come here, but as a defense-in-depth measure it's fine imho
-                _connectionStatusText = $"Failed to connect to Hub at {_hubPath.ToString()}";
+                _connectionStatusText = $"Failed to connect to and register on Hub at {_hubPath.ToString()}";
                 StateHasChanged();
 
                 Logger.LogCritical(
@@ -107,69 +106,112 @@
         }
     }
 
-    /// <summary>
-    /// (Re-)Starts the HubConnection untill succesfull, using increasing backoff delays upon Start failures
-    /// </summary>
-    private async Task ConnectWithRetryAsync()
+    private async Task<bool> StartConnectionAndRegisterAsync()
     {
         Random random = null;
         int delayIncrease = 0;
 
-        // Keep trying to until we can start or the browser tab is closed by the user
-        while (_hubConnection.State != HubConnectionState.Connected)
+        bool started = false;
+        bool registered = false;
+
+        // Any information we had is now stale --> remove it
+        _store.Clear();
+        SetStatusList();
+
+        // Keep trying to until we can start and register or the browser tab is closed by the user
+        while (!registered)
         {
-            string message;
-
-            try
+            if (!started)
             {
-                message = $"Trying to connect to Hub at {_hubPath.ToString()}...";
-                SetStatusText(message);
-                Logger.LogInformation(
-                    nameof(ConnectWithRetryAsync) + " - " +
-                    message);
-
-                await _hubConnection.StartAsync();
-
-                message = $"Connected to Hub at {_hubPath.ToString()}";
-                SetStatusText(message);
-                Logger.LogInformation(
-                    nameof(ConnectWithRetryAsync) + " - " +
-                    message);
-
-                await RegisterMonitorCient();
+                started = await TryToStartConnectionAsync();
             }
-            catch (Exception e)
-            {
-                _store.Clear();
-                SetStatusList();
-                SetStatusText($"Error while connecting to Hub: {e.Message} - retrying soon");
 
+            if (started)
+            {
+                registered = await TryToRegisterMonitoreAsync();
+            }
+
+            if (!registered)
+            {
+                // Either Start or Registration failed, backoff and try again ...
                 random ??= new Random();
                 int delay = random.Next(2500, 5000) + delayIncrease;
-                if (delayIncrease <= 25000) delayIncrease += 2500;
+                if (delayIncrease <= 20000) delayIncrease += 5000;
 
-                Logger.LogWarning(
-                    e,
-                    nameof(ConnectWithRetryAsync) + " - " +
-                    $"Error while connecting to Hub; retrying in {delay} msec");
+                Logger.LogInformation(
+                    nameof(StartConnectionAndRegisterAsync) + " - " +
+                    $"Backing of for {delay} msec");
 
                 await Task.Delay(delay);
             }
         }
+
+        return true;
     }
 
-    private async Task RegisterMonitorCient()
+    private async Task<bool> TryToStartConnectionAsync()
     {
-        MonToSrvRegistrationDto registrationDto = new(); // currently empty --> default record returned
-        await _hubConnection.SendAsync(nameof(IMonitorHubServer.RegisterMonitorClient), registrationDto);
+        string message;
 
-        Logger.LogInformation(
-            nameof(RegisterMonitorCient) + " - " +
-            "Monitor has been registered at the Server with {ConnectionId}",
-            _hubConnection.ConnectionId);
+        try
+        {
+            message = $"Trying to connect to Hub at {_hubPath.ToString()}...";
+            SetStatusText(message);
+            Logger.LogInformation(
+                nameof(TryToStartConnectionAsync) + " - " +
+                message);
+
+            await _hubConnection.StartAsync();
+
+            message = $"Connected to Hub at {_hubPath.ToString()}";
+            SetStatusText(message);
+            Logger.LogInformation(
+                nameof(TryToStartConnectionAsync) + " - " +
+                message);
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            SetStatusText($"Error while connecting to Hub: {e.Message} - retrying soon");
+            Logger.LogWarning(
+                e,
+                nameof(TryToStartConnectionAsync) + " - " +
+                "Error while connecting to Hub");
+        }
+
+        return false;
     }
 
-    private Task ConnectionClosedHandler(Exception e)
+    private async Task<bool> TryToRegisterMonitoreAsync()
+    {
+        // currently empty --> default record returned
+        MonToSrvRegistrationDto registrationDto = new();
+
+        try
+        {
+            await _hubConnection.SendAsync(nameof(IMonitorHubServer.RegisterMonitorClient), registrationDto);
+
+            Logger.LogInformation(
+                nameof(TryToRegisterMonitoreAsync) + " - " +
+                "Monitor has been registered at the Server with {ConnectionId}",
+                _hubConnection.ConnectionId);
+
+            return true;
+        }
+
+        catch (Exception e)
+        {
+            Logger.LogWarning(
+                e,
+                nameof(TryToRegisterMonitoreAsync) + " - " +
+                $"Error while registering Monitor with the Hub");
+        }
+
+        return false;
+    }
+
+    private async Task ConnectionClosedHandler(Exception e)
     {
         string message;
 
@@ -185,7 +227,9 @@
                 nameof(ConnectionClosedHandler) + " - " +
                 message);
 
-            return Task.CompletedTask;
+            // We are in an interactive environment, respect the Server
+            // and do not try to reconnect (as is done on failures).
+            return;
         }
 
         SetStatusText($"Error {e.Message} on Connection to Hub at {_hubPath.ToString()}");
@@ -194,7 +238,9 @@
             nameof(ConnectionClosedHandler) + " - " +
             "Connection to Server has been lost");
 
-        return ConnectWithRetryAsync();
+        _ = await StartConnectionAndRegisterAsync();
+
+        return;
     }
 
     private Task ConnectionReconnectedHandler(string connectionId)

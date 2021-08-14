@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace IoTAS.Shared.Hubs
 {
@@ -14,6 +15,35 @@ namespace IoTAS.Shared.Hubs
         int DeviceId,               // The Id of the Device
         DateTime FirstRegisteredAt, // The very first registration DateTime
         DateTime LastRegisteredAt,  // The most recent registration DateTime
-        DateTime LastSeenAt         // The most recently seen registration or heartbeat DateTime
-    );
+        DateTime LastSeenAt         // The most recently seen registration or heartbeat DateTime 
+    )
+    {
+        private static readonly string dateTimeFormat = "yyyy-MM-dd HH:mm:ss";
+
+        public override string ToString()
+        {
+            StringBuilder sb = new();
+
+            sb.Append(nameof(SrvToMonDeviceStatusDto));
+            sb.Append(" { ");
+            sb.Append(nameof(DeviceId));
+            sb.Append(" = ");
+            sb.Append(DeviceId);
+            sb.Append(", ");
+            sb.Append(nameof(FirstRegisteredAt));
+            sb.Append(" = ");
+            sb.Append(FirstRegisteredAt.ToString(dateTimeFormat));
+            sb.Append(", ");
+            sb.Append(nameof(LastRegisteredAt));
+            sb.Append(" = ");
+            sb.Append(LastRegisteredAt.ToString(dateTimeFormat));
+            sb.Append(", ");
+            sb.Append(nameof(LastSeenAt));
+            sb.Append(" = ");
+            sb.Append(LastSeenAt.ToString(dateTimeFormat));
+            sb.Append(" } ");
+
+            return sb.ToString();
+        }
+    }
 }

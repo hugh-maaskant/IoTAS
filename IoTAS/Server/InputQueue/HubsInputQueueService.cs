@@ -27,7 +27,7 @@ namespace IoTAS.Server.InputQueue
 
         private readonly ILogger<HubsInputQueueService> logger;
 
-        public HubsInputQueueService(ILogger<HubsInputQueueService>? logger)
+        public HubsInputQueueService(ILogger<HubsInputQueueService> logger)
         {
             this.logger = logger ?? NullLogger< HubsInputQueueService>.Instance;
 

@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove=".DS_Store" />
+    <None Remove=".DS_Store;*.md" />
   </ItemGroup>
 
   <ItemGroup>

@@ -20,7 +20,7 @@ namespace IoTAS.Server.Hubs
 
         private readonly IHubsInputQueue queueService;
 
-        public MonitorHub(ILogger<IMonitorHub>? logger, IHubsInputQueue queueService)
+        public MonitorHub(ILogger<IMonitorHub> logger, IHubsInputQueue queueService)
         {
             this.logger = logger ?? NullLogger<IMonitorHub>.Instance;
             this.queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
@@ -36,7 +36,7 @@ namespace IoTAS.Server.Hubs
             await base.OnConnectedAsync();
         }
 
-        public override async Task OnDisconnectedAsync(Exception? e)
+        public override async Task OnDisconnectedAsync(Exception e)
         {
             if (e == null)
             {
