@@ -10,7 +10,7 @@ The Device is implemented as a .NET 5 console app, the Monitor is a Blazor web-a
 
 The smart speaker Device emulates a smart speaker in the public address system of the airport.
 The Monitor web app displays the status of all known Devices in real-time.
-The Server maintains the status of the Devices, serves the Monitor SPA, and provides SignalR hubs for the Devices and Monitors to connect to and pass real-time updates through.
+The Server maintains the status of the Devices, serves the Monitor SPA, and provides SignalR Hubs for the Devices and Monitors to connect to and pass real-time updates through.
 
 ![Basic Architecture](./BasicArch.png)
 
@@ -29,10 +29,10 @@ Similar to the Devices, it will try to re-connect and re-register upon loosing t
 
 The Server starts and then waits for Devices and Monitors to connect on their respective SignalR ports and to register themselves. 
 For Devices it records the DeviceId and the ```RegisteredAt``` and the the ```LastSeenAt``` time in the ```DeviceStatusStore```. 
-It will then multicast the full ```DeviceStatus``` of that Device to all registered Monitors.
+It will then multicast the full ```DeviceStatus``` of that single Device to all registered Monitors.
 For each ```Heartbeat``` received, it multicasts the updated status for that DeviceId to all registered Monitors.
 When a new Monitor registers, the Server immediately sends it the ```DeviceStatusList```, a list of all known Devices and their current status.
-It then adds the Monitor to the known Monitors so that it will receive the ```DeviceStatus``` for newly registerd Devices as well as new ```Heartbeat``` updates.
+It then adds the Monitor to the known Monitors so that it will receive the ```DeviceStatus``` for newly registerd Devices as well as subsequent ```Heartbeat``` updates.
 
 ![Basic Architecture](./LifeCycle.png)
 

@@ -14,7 +14,7 @@ Currently this repository is at the first milestone.
 
 ## Technologies used
 The solution needs to be build with [.NET 5](https://docs.microsoft.com/en-us/dotnet/core/dotnet-five) and 
-[SignalR](https://docs.microsoft.com/en-us/aspnet/core/signalr/introduction?view=aspnetcore-5.0) technologies.
+[SignalR Core](https://docs.microsoft.com/en-us/aspnet/core/signalr/introduction?view=aspnetcore-5.0) technologies.
 While the original assignment is to use Javascript for the management website with real-time information,
 I have decided to use [Blazor](https://docs.microsoft.com/en-us/aspnet/core/blazor/?view=aspnetcore-5.0) WASM instead.
 

@@ -1,0 +1,57 @@
+' PlantUML - see https://plantuml.com/
+
+@startuml
+
+collections Device
+participant Server
+collections Monitor
+participant NewMonitor
+boundary Browser
+
+== Connect and Register Device ==
+
+Device -> Server: Connect on "/device-hub"
+Device -> Server: RegisterDevice(DeviceId)
+
+hnote over Server
+record & save
+ registration
+   Id & time
+endnote
+
+Server -> Monitor: Update(DeviceID, Status)
+
+== Repeated ==
+
+hnote over Device
+  delay for
+15 seconds
+endnote
+
+Device -> Server: Heartbeat(DeviceID)
+
+hnote over Server
+update
+ store
+endnote
+
+Server -> Monitor: Heartbeat(DeviceID, Status)
+
+== New Monitor ==
+
+create NewMonitor
+Browser -> NewMonitor: https:iotas.com/
+NewMonitor -> Server: Connect on "/monitor-hub"
+NewMonitor -> Server: RegisterMonitor()
+
+Server -> NewMonitor: Initialize(DeviceStatusList)
+
+hnote over NewMonitor
+    from now on it
+   will receive new
+Device registration 
+    and heartbeat
+         updates
+endnote
+
+@enduml
