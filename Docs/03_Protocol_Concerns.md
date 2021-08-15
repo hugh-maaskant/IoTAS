@@ -1,6 +1,6 @@
 # 03 Protocol Concerns
 
-The assigmant for the first milestone is to build a simple basic solution with infrastructure for both the Device (a console App) and the Monitor (a browser SPA) to connect with SignalR Core to the Server and have the Devices emit heartbeat messages that the Monitor  receives through the Server relay.
+The assigmant for the first milestone is to build a simple solution with basic infrastructure for both the Device (a console App) and the Monitor (a browser SPA) Clients to connect with SignalR Core to the Server and have the Devices emit heartbeat messages that the Monitor  receives through the Server relay.
 This provides the information the Monitor needs for displaying an overview of the Device statusses to the user.
 
 At the functional level, the Client process is fairly simple:
@@ -8,6 +8,7 @@ At the functional level, the Client process is fairly simple:
 1. Build, configure and start a SignalR connection to the Server's Hub.
 2. Register the Device c.q. Monitor with the Server.
 3. Send (Device) or Receive (Monitor) heartbeat information.
+4. For the Monitor: receive Device status updates.
 
 A Device passes its ```DeviceId``` to the Server during registration.
 A Monitor has -for this milestone- no data to pass and, apart from registering, only receives data.
@@ -32,7 +33,7 @@ The Server provides a Hub, which is an endpoint that Clients can connect to.
 Hubs are identified with a URL.
 Clients create connections to a Hub, after which there is bi-directional communication through remote procedure calls.
 
-A SignalR Client first needs to build an internal ```HubConnection``` using the ```HubConnectionBuilder``` and then configure and start the connection, e.g.
+A SignalR Client first needs to build an internal ```HubConnection``` using the ```HubConnectionBuilder``` and then it can configure and start the connection, e.g.
 
 ```csharp
  connection = new HubConnectionBuilder()     .WithUrl(hubUrl)     .Build();// set connection life-cycle callback(s)connection.Closed += ConnectionClosedHandler;// set the method(s) that the Server will call remotely over SignalRconnection.On<Dto>("ReceiveDeviceHeartbeatUpdate", ReceiveDeviceHeartbeatUpdate);
@@ -50,8 +51,8 @@ At the application level there really are two connection types:
 
 This means that the Server needs to act as a relay at the application level.
 
-The assigment was for both connections to terminate at the same Server SignalR Hub, which can be typed (on the Server side). Because I have a different use case in mind that I want to try out here, but also because I do not like to terminate two differently typed connections at the same Hub, I decided to use seperate Hubs instead: ```/device``` and ```/monitor```.
-While this is -imho- cleaner, it is also more difficult to deal with sequencing and error conditions, as described below.
+The assigment was for both connections to terminate at the same Server SignalR Hub, which can be typed (on the Server side). Because I have a different use case in mind that I want to try out here, but also because I do not like to terminate two differently typed connections at the same Hub, I decided to use seperate Hubs instead: ```/device-hub``` and ```/monitor-hub```.
+While this is -imho- cleaner, it is also more difficult to deal with sequencing and error conditions, as described below and in the [note on Server Design](./06_Server_Design.md).
 
 #### Device
 
@@ -69,7 +70,7 @@ As this is (emulates) an IoT Device that has no direct user interaction, my assu
 
 The second point can be debated, but this is how I implemented the application protocol.
 
-Furthermore, the Server needs to be robust and thus tolerate Device disconnects (note it currently his not sending anything, but that should also be robust once it is needed).
+Furthermore, the Server needs to be robust and thus tolerate Device disconnects (note it currently is not sending anything, but that should also be robust once it is needed).
 
 #### Monitor
 
@@ -126,6 +127,7 @@ Note that SignalR provides some support for automatic reconnection in case of fa
 But that is not available for starting the connection and, out of the box, it only has a limited number of retries.
 It is possible, however, to define and hook-up any tailored backoff and retry strategy.
 For these reasons I decided to do my own error recovery and only rely on catchhing exceptions and the ```connection.Closed``` event handler.
+This is described in great detail in the [note on Device Design](./04_Device_Design.md).
 
 ### Application Error Handling
 

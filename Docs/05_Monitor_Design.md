@@ -8,7 +8,7 @@ As the SignalR startup handling is very similar to that of a Device, it is essen
 After initialization the Monitor becomes passive with respect to the SignalR protocol and only receives ```DeviceStatus```, ```DeviceStatusList``` and ```Heartbeat``` updates, which it renders into its web page. 
 
 To ensure that the Monitor keeps connected, and thus keeps receiving updates from the Server, the protocol handling is implemented in the App component, which wraps all of the App's pages and their Blazor components.
-This allows the user to navigate away from the main status page to other pages in the App and then return to the Monitor page. 
+This allows the user to navigate away from the main status page to other pages in the App and then return to the Monitor page with all data available and fresh. 
 It also paves the way for a potential summary component and pages with command actions to send to the Server.
 
 It also means that the initialization code for the connection should be delayed until after the App renders, as it would otherwise further delay the App's initialization, leaving the user staring at a "Loading ..." page even longer (or forever if connection startup fails).
@@ -37,6 +37,6 @@ Furthermore the current time is displayed.
 
 The Monitor keeps a local copy of the ```DeviceStatusStore``` which is initialised by the Server after registration and updated upon Device registrations and Device Hearbeat update messages. The store will be cleared when the HubConnection is lost, as the information would otherwise be stale and unreliable.
 
-To pass the ```DeviceStatusStore``` to other components a Blazor ```Cascading Value``` is used. An alternative solution would be to use a service to share the state between Blazor components. 
+To pass the ```DeviceStatusStore``` to other components, a Blazor ```Cascading Value``` is used. An alternative solution would be to use a service to share the state between Blazor components. 
 
 Another Cascading Value is used by the App component to share a connection status string. This string value is displayed in the ```Footer``` component of the Monitor App.

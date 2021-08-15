@@ -46,6 +46,7 @@ namespace IoTAS.Server.InputQueue
             logger.LogDebug("Created");
         }
 
+        // Called by the ASP.NET infrastructure upon startup ...
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             logger.LogInformation(

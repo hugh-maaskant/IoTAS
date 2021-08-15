@@ -1,6 +1,6 @@
 # 04 Device Design
 
-The design of the IoT Smart Speaker Device (Device for short) emulation component is a rather straighforward .NET 5 Console App that proceeds in a linear fashion.
+The design of the IoT Smart Speaker Device (Device for short) emulation subsystem is a rather straighforward .NET 5 Console App that proceeds in a linear fashion.
 
 The App starts by asking the interactive user to enter a ```DeviceID```. It currently is the user's responsability to ensure no duplicate IDs are entered.
 Once a valid ```DeviceID``` has been obtained, the program sets a ```Ctrl-C``` handler, configures the SignalR connection, starts the connection, and registers the Device with the server. 
@@ -51,8 +51,8 @@ private static async Task<bool> StartConnectionAndRegisterAsync(){    bool sta
     
     // We only get here due to cancellation, all other failure 
     // conditions retry the operation(s) until succesful ...    return false;}```
-Note that the same backof is used regardless whether starting the connection or registering the Device failed.
-Although in practise it is highly unlikely that registration would fail just after the connection was started, it is better to be safe than sorry and build robust code.
+Note that the same backof logic is used regardless whether it was starting the connection or registering the Device that failed.
+Although in practise it is highly unlikely that registration would fail just after the connection was started, it is better to be safe than sorry.
 
 In the ```ConnectionClosedHandler```, we determine the reason behind the connection closing and either exit (when cancellation was requested) or retry to start and register with the same ```StartConnectionAndRegisterAsync()``` method that was initially used to kick off the Device's activity.
 
@@ -78,15 +78,22 @@ For the future milestones, and definately if this was a real product deployment,
 
 ### Use ```HostedService``` in stead of ```Ctrl-C``` interception
 
-I only learned about the possibility to use the ```HostedService``` outside of ASP.NET after essentially finishing the Device code. Building upon it would allow:
+I only learned about the possibility to use the ```HostedService``` outside of ASP.NET Core after essentially finishing the Device code. Building upon it would allow:
 
-* To easily use standard Logging
-* To use Dependency Injection
-* To do the heartbeat sending in a class derived from ```BackgroundService```
+* to easily use standard Logging;
+* to use Dependency Injection;
+* to do the heartbeat sending in a class derived from ```BackgroundService```.
 
 See [https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/hosted-services](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/hosted-services?view=aspnetcore-5.0) for details.
 
 ### Use standard .NET Core Logging
 
-This is enabled by the ```HostedService``.
+This is enabled by the ```HostedService``` and would be more useful than the current ```Console.WriteLine``` calls.
+
+### Type-safe Client calls
+
+Another nice improvement would be to have type-safe HubConnections on the Client side.
+I did some (minimal) work on that by defining the interfaces the Server Hubs provide to the Clients, but that is very limited indeed. 
+Hopefully .Net 6 will provide some improveents in this area (I noticed a [GitHub issue discussion](https://github.com/AndreasBieber/SignalR.Client.TypedHubProxy) that seems to address it.
+
 
