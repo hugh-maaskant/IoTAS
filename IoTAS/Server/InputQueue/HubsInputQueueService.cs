@@ -14,7 +14,7 @@ namespace IoTAS.Server.InputQueue
     /// <remarks>
     /// Provides a thread-safe Enqueue operation and an asynchronous blocking Dequeue operation
     /// </remarks>
-    public sealed class HubsInputQueueService : IHubsInputQueue
+    public sealed class HubsInputQueueService : IHubsInputQueueService
     {
         private readonly object lockObj = new();
 

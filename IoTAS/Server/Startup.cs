@@ -33,7 +33,7 @@ namespace IoTAS.Server
             services.AddRazorPages();
             services.AddSignalR();
 
-            services.AddSingleton<IHubsInputQueue, HubsInputQueueService>();
+            services.AddSingleton<IHubsInputQueueService, HubsInputQueueService>();
             services.AddSingleton<IDeviceStatusStore, VolatileDeviceStatusStore>();
 
             services.AddHostedService<InputProcessorHostedService>();

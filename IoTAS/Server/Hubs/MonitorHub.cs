@@ -18,9 +18,9 @@ namespace IoTAS.Server.Hubs
     {
         private readonly ILogger<IMonitorHub> logger;
 
-        private readonly IHubsInputQueue queueService;
+        private readonly IHubsInputQueueService queueService;
 
-        public MonitorHub(ILogger<IMonitorHub> logger, IHubsInputQueue queueService)
+        public MonitorHub(ILogger<IMonitorHub> logger, IHubsInputQueueService queueService)
         {
             this.logger = logger ?? NullLogger<IMonitorHub>.Instance;
             this.queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));

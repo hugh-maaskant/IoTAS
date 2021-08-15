@@ -22,11 +22,11 @@ namespace IoTAS.Server.InputQueue
     /// </summary>
     public sealed class InputProcessorHostedService : BackgroundService
     {
-        private const string registeredMonitorssGroup = "RegisteredMonitors";
+        private const string registeredMonitorsGroup = "RegisteredMonitors";
 
         private readonly ILogger<InputProcessorHostedService> logger;
 
-        private readonly IHubsInputQueue inputQueue;
+        private readonly IHubsInputQueueService inputQueue;
 
         private readonly IDeviceStatusStore store;
 
@@ -34,7 +34,7 @@ namespace IoTAS.Server.InputQueue
 
         public InputProcessorHostedService(
             ILogger<InputProcessorHostedService> logger,
-            IHubsInputQueue inputQueue,
+            IHubsInputQueueService inputQueue,
             IDeviceStatusStore store,
             IHubContext<MonitorHub, IMonitorHub> monitorHubContext)
         {
@@ -54,7 +54,7 @@ namespace IoTAS.Server.InputQueue
 
             bool fatalError = false;
 
-            while (!stoppingToken.IsCancellationRequested & !fatalError)
+            while (!stoppingToken.IsCancellationRequested && !fatalError)
             {
                 try
                 {
@@ -112,15 +112,18 @@ namespace IoTAS.Server.InputQueue
             switch (request.ReceivedDto)
             {
                 case DevToSrvDeviceRegistrationDto:
-                    await ProcessDeviceRegistration(request);
+                    await ProcessDeviceRegistrationAsync(
+                        (DevToSrvDeviceRegistrationDto)request.ReceivedDto, request.ReceivedAt);
                     break;
 
                 case DevToSrvDeviceHeartbeatDto:
-                    await ProcessDeviceHeartbeat(request);
+                    await ProcessDeviceHeartbeatASync(
+                        (DevToSrvDeviceHeartbeatDto)request.ReceivedDto, request.ReceivedAt);
                     break;
 
                 case MonToSrvRegistrationDto:
-                    await ProcessMonitorRegistration(request);
+                    await ProcessMonitorRegistrationAsync(
+                        (MonToSrvRegistrationDto)request.ReceivedDto, request.ConnectionId);
                     break;
 
                 default:
@@ -132,111 +135,83 @@ namespace IoTAS.Server.InputQueue
             }
         }
 
-        private async Task ProcessDeviceRegistration(Request request)
+        private async Task ProcessDeviceRegistrationAsync(DevToSrvDeviceRegistrationDto dtoIn, DateTime timeStamp)
         {
-            Debug.Assert(
-                request.ReceivedDto is DevToSrvDeviceRegistrationDto,
-                $"{nameof(ProcessDeviceRegistration)} request.ReceivedData is not {nameof(DevToSrvDeviceRegistrationDto)}");
+            DeviceReportingStatus status = store.UpdateRegistration(dtoIn.DeviceId, timeStamp);
 
-            var dtoIn = (DevToSrvDeviceRegistrationDto)request.ReceivedDto;
-
-            logger.LogDebug(
-                nameof(ProcessDeviceRegistration) + " - " +
-                "Handling {Request}",
-                request);
-
-            DeviceReportingStatus status = store.UpdateRegistration(dtoIn.DeviceId, request.ReceivedAt);
             var dtoOut = status.ToStatusDto();
 
             try
             {
-                await monitorHubContext.Clients.Group(registeredMonitorssGroup).ReceiveDeviceStatusUpdate(dtoOut);
+                await monitorHubContext.Clients.Group(registeredMonitorsGroup)
+                    .ReceiveDeviceStatusUpdate(dtoOut);
             }
             catch (Exception e)
             {
                 logger.LogWarning(
                     e,
-                    nameof(ProcessDeviceRegistration) + " - " +
+                    nameof(ProcessDeviceRegistrationAsync) + " - " +
                     $"Error in {nameof(IMonitorHub.ReceiveDeviceStatusUpdate)} multicast");
             }
 
             logger.LogDebug(
-                nameof(ProcessDeviceRegistration) + " - " +
-                "Handled {Request}",
-                request);
+                nameof(ProcessDeviceRegistrationAsync) + " - " +
+                "Handled {dtoIn}",
+                dtoIn);
         }
 
-        private async Task ProcessDeviceHeartbeat(Request request)
+        private async Task ProcessDeviceHeartbeatASync(DevToSrvDeviceHeartbeatDto dtoIn, DateTime timeStamp)
         {
-            Debug.Assert(
-                request.ReceivedDto is DevToSrvDeviceHeartbeatDto,
-                $"{nameof(ProcessDeviceHeartbeat)} request.ReceivedData is not {nameof(DevToSrvDeviceHeartbeatDto)}");
+            DeviceReportingStatus status = store.UpdateHeartbeat(dtoIn.DeviceId, timeStamp);
 
-            var dtoIn = (DevToSrvDeviceHeartbeatDto)request.ReceivedDto;
-
-            logger.LogDebug(
-                nameof(ProcessDeviceHeartbeat) + " - " +
-                "Handling {Request}",
-                request);
-
-            DeviceReportingStatus status = store.UpdateHeartbeat(dtoIn.DeviceId, request.ReceivedAt);
             var dtoOut = status.ToHeartbeatDto();
 
             try
             {
-                await monitorHubContext.Clients.Group(registeredMonitorssGroup).ReceiveDeviceHeartbeatUpdate(dtoOut);
+                await monitorHubContext.Clients.Group(registeredMonitorsGroup)
+                    .ReceiveDeviceHeartbeatUpdate(dtoOut);
             }
             catch (Exception e)
             {
                 logger.LogWarning(
                     e,
-                    nameof(ProcessDeviceHeartbeat) +
+                    nameof(ProcessDeviceHeartbeatASync) +
                     $"Error in {nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate)} multicast");
             }
             logger.LogDebug(
-                nameof(ProcessDeviceHeartbeat) + " - " +
-                "Handled {Request}",
-                request);
+                nameof(ProcessDeviceHeartbeatASync) + " - " +
+                "Handled {dtoIn}",
+                dtoIn);
         }
 
-        private async Task ProcessMonitorRegistration(Request request)
+        private async Task ProcessMonitorRegistrationAsync(MonToSrvRegistrationDto dtoIn, string connectionId)
         {
-            Debug.Assert(
-                request.ReceivedDto is MonToSrvRegistrationDto,
-                $"{nameof(ProcessMonitorRegistration)} request.ReceivedData is not {nameof(MonToSrvRegistrationDto)}");
-
-            var dtoIn = (MonToSrvRegistrationDto)request.ReceivedDto;
-
-            logger.LogDebug(
-                nameof(ProcessMonitorRegistration) + " - " +
-                "Handling {Request}",
-                request);
-
             var dtoOut = store.GetDevicesStatusList()
                 .Select(status => status.ToStatusDto())
                 .ToArray();
 
-            // Provide the registering Monitor with the current status of all Devices
-            // If the number of devices gets too big, this could conditially be done in chunks
             try
             {
-                await monitorHubContext.Clients.Client(request.ConnectionId).ReceiveDeviceStatusesSnapshot(dtoOut);
+                // Provide the registering Monitor with the current status of all Devices
+                // If the number of devices gets too big, this could conditially be done in chunks
+                await monitorHubContext.Clients.Client(connectionId)
+                    .ReceiveDeviceStatusesSnapshot(dtoOut);
             }
             catch (Exception e)
             {
                 logger.LogWarning(
                     e,
-                    nameof(ProcessMonitorRegistration) +
+                    nameof(ProcessMonitorRegistrationAsync) +
                     $"Error in {nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot)} singlecast");
             }
 
             // Ensure it will get future status updates
-            await monitorHubContext.Groups.AddToGroupAsync(request.ConnectionId, registeredMonitorssGroup);
+            await monitorHubContext.Groups.AddToGroupAsync(connectionId, registeredMonitorsGroup);
 
             logger.LogDebug(
-                nameof(ProcessMonitorRegistration) + " - " +
-                "Handled {Request}",
-                request);
+                nameof(ProcessMonitorRegistrationAsync) + " - " +
+                "Handled {dtoIn}",
+                dtoIn);
         }
     }
 }
