@@ -1,8 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿//
+// Copyright (c) 2021 Hugh Maaskant
+// MIT License
+//
+
+using System;
 using System.Text;
-using System.Threading.Tasks;
 
 using IoTAS.Shared.Hubs;
 

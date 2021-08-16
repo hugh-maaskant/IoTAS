@@ -1,4 +1,9 @@
-﻿using System;
+﻿//
+// Copyright (c) 2021 Hugh Maaskant
+// MIT License
+//
+
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;

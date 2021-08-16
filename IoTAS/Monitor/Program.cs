@@ -1,3 +1,7 @@
+//
+// Copyright (c) 2021 Hugh Maaskant
+// MIT License
+//
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;

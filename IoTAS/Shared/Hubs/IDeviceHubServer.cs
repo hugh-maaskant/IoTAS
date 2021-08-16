@@ -1,4 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿//
+// Copyright (c) 2021 Hugh Maaskant
+// MIT License
+//
+
+using System.Threading.Tasks;
 
 namespace IoTAS.Shared.Hubs
 {

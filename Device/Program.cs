@@ -1,4 +1,8 @@
-﻿using System;
+﻿//
+// Copyright (c) 2021 Hugh Maaskant
+// MIT License
+//
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,7 +19,7 @@ namespace IoTAS.Device
         // private static readonly string hubUrlHttps = "https://localhost:44388" + IDeviceHubServer.path;
         // private static readonly string hubUrlHttp  = "http://localhost:58939" + IDeviceHubServer.path;
 
-        // Must be fields so the event handlers can access them :-(.
+        // Must be fields so the event handlers can access them.
         private static readonly CancellationTokenSource tokenSource = new();
         private static HubConnection connection;
         private static int deviceId;

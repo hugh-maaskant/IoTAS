@@ -1,4 +1,7 @@
-﻿
+﻿//
+// Copyright (c) 2021 Hugh Maaskant
+// MIT License
+//
 
 namespace IoTAS.Shared.Hubs
 {

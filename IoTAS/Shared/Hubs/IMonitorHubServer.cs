@@ -1,7 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿//
+// Copyright (c) 2021 Hugh Maaskant
+// MIT License
+//
+
 using System.Threading.Tasks;
 
 namespace IoTAS.Shared.Hubs

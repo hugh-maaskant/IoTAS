@@ -1,7 +1,10 @@
-﻿using System;
+﻿//
+// Copyright (c) 2021 Hugh Maaskant
+// MIT License
+//
+
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace IoTAS.Shared.DevicesStatusStore
 {

@@ -22,7 +22,7 @@ protected override async Task OnAfterRenderAsync(bool firstRender){    if (fir
 The actual behaviour of the connection handling is slightly different from that of the Device in the following ways:
 
 1. There is no Ctrl-C handling; the way to exit is to close the browser tab, which will close and cleanup the connection.
-2. When the Server closes the connection no reconnection attempt is made, but it will be shown to the user.
+2. When the Server closes the connection, no reconnection attempt is made.
 
 ### UI
 
@@ -30,8 +30,7 @@ In order to make the UI a bit more usefull and interesting, the Monitor page rec
 On-time times are rendered in green, late in orange, and overdue in red.
 Furthermore the current time is displayed.
 
-**ToDo:** Screenshot with multiple devices
-
+![Screenshot](./Screenshot.png)
 
 ### Status Store
 
