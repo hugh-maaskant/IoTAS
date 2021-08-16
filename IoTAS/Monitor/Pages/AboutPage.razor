@@ -1,0 +1,82 @@
+﻿<!--
+// Copyright (c) 2021 Hugh Maaskant
+// MIT License
+-->
+@page "/about"
+
+<h3>About</h3>
+
+<p>
+    This Single Page Application (SPA) is part of a fictuous <strong>I</strong>ntranet
+    <strong>o</strong>perated <strong>T</strong>otal <strong>A</strong>udio <strong>S</strong>olution
+    for airports.
+    It also is part of a
+    <a href="https://liveproject.manning.com/" target="_blank">
+    Manning liveProject
+        </a>
+    titled
+    <a href="https://www.manning.com/liveproject/building-iot-applications-with-signalr" target="_blank">
+        Building <strong>IoT A</strong>pplications with <strong>S</strong>ignalR
+    </a> exercise.
+</p>
+
+<p>The project consists of four milestones:</p>
+
+<ol>
+    <li> Create a basic setup</li>
+    <li> Enable real-time audio transfer</li>
+    <li> Enable IoT applications to run as a single cluster</li>
+    <li> Enable deployment via Docker</li>
+</ol>
+
+<p>Currently the application is at the first milestone: basic setup.</p>
+
+<h4>Functional Objectives</h4>
+
+<p>
+    The ultimate goal of this project is to build an IoT solution that distributes audio recordings in real-time to various
+    inter/intranet connected smart public address speakers in an airport. Furthermore it allows operators to view the status
+    of the IoT devices in a browser.
+    Presumeably the next milestones would also add some command capability to the Monitor web page, e.g. to start an audio
+    playback (schedule) on certain speakers.
+</p>
+
+<p><img src="/img/BasicArch.png" alt="Basic Architecture"></p>
+
+<h4>Learning Objectives</h4>
+
+<p>My personal learning goals for this projects are:</p>
+
+<ul>
+    <li>Get up to speed with ASP.NET Core and SignalR</li>
+    <li>Learn how to build a Single Page Applications with Blazor</li>
+    <li>Be able to start audio playback (and media in general) in the browser</li>
+    <li>Refresh my C# coding skills (I&#39;m a very rusty programmer ;-)</li>
+    <li>Get basic cloud deployment / devops (Docker and Azure?) experience</li>
+</ul>
+
+<p>
+    Ultimately, I want to use these learnings for the creation of an on-line, real-time, multi-player card game.
+    This also means some of my design choices are influenced by that goal and therefore may deviate somewhat 
+    from the live project assigments.
+</p>
+
+<h4>Technologies used</h4>
+
+<p>
+    The solution needs to be build with <a href="https://docs.microsoft.com/en-us/dotnet/core/dotnet-five" target="_blank">.NET 5</a> and
+    <a href="https://docs.microsoft.com/en-us/aspnet/core/signalr/introduction?view=aspnetcore-5.0"  target="_blank">SignalR Core</a>
+    technologies.
+    While the original assignment is to use Javascript for the management SPA (which you are now viewing :-) with real-time
+    status, I have decided to use <a href="https://docs.microsoft.com/en-us/aspnet/core/blazor/?view=aspnetcore-5.0" target="_blank">Blazor</a>
+    WASM instead.
+</p>
+
+<p>
+    For more information and access to the source code see the repo at 
+    <a href="https://github.com/hugh-maaskant/IoTAS" target="_blank">https://github.com/hugh-maaskant/IoTAS</a>
+</p>
+
+@code {
+
+}

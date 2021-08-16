@@ -1,7 +1,7 @@
 # Introduction
 
 This repo contains the code for a fictuous **I**ntranet **o**perated **T**otal **A**udio **S**olution for airports.
-It also is a [Manning liveProject](https://liveproject.manning.com/) titled [Bulding **IoT A**pplications with **S**ignalR](https://www.manning.com/liveproject/building-iot-applications-with-signalr) exercise. 
+It also is a [Manning liveProject](https://liveproject.manning.com/) titled [Building **IoT A**pplications with **S**ignalR](https://www.manning.com/liveproject/building-iot-applications-with-signalr) exercise. 
 
 The liveProject consists of four milestones:
 

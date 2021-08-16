@@ -1,8 +1,11 @@
-﻿@using Microsoft.AspNetCore.SignalR.Client
+﻿<!--
+// Copyright (c) 2021 Hugh Maaskant
+// MIT License
+-->
+
 @using Microsoft.Extensions.Logging;
 @using Microsoft.Extensions.Logging.Abstractions
 
-@using IoTAS.Shared.Hubs;
 
 @inject NavigationManager NavigationManager;
 
@@ -14,7 +17,7 @@
 
     [CascadingParameter(Name = "CascadingConnectionStatusText")]
     public string FooterText { get; set; }
-   
+
 
     protected override void OnInitialized()
     {

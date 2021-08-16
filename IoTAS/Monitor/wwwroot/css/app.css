@@ -1,4 +1,17 @@
-﻿html {
+﻿/*
+ *  Copyright (c) 2021 Hugh Maaskant
+ *  MIT License
+ */
+
+:root {
+    --theme-backgr-xdark: hsl(240, 20%, 31%);
+    --theme-backgr-dark: hsl(240, 20%, 35%);
+    --theme-hyperlink: hsl(240, 35%, 45%);
+    --theme-foregr-light: hsl(240, 20%, 82%);
+    --theme-foregr-xlight: hsl(240, 20%, 92%);
+}
+
+html {
     height: 100%;
     box-sizing: border-box;
 }
@@ -24,7 +37,7 @@ body {
 }
 
 .iotas-page-header {
-    background-color: #404060;
+    background-color: var(--theme-backgr-xdark);
     color: #fff;
     padding: 8px 20px 8px 20px;
     vertical-align: middle;
@@ -37,12 +50,34 @@ body {
     float:left;
 }
 
-.iotas-brand {
-    display:block;
-    float:left;
+.iotas-brand-txt {
+    display: block;
+    float: left;
     font-size: 1.5em;
     line-height: 64px;
+    color: var(--theme-foregr-xlight);
 }
+
+.iotas-menu ul {
+    display: flex;
+    float: right;
+    padding: 0px 8px 0px 0px;
+    list-style-type: none;
+}
+
+.iotas-menu li a, a:visited{
+    display: block;
+    float: left;
+    text-align: center;
+    font-size: 1.1em;
+    padding: 0px 16px 0px 16px;
+    text-decoration: none;
+    color: var(--theme-foregr-light);
+}
+
+    .iotas-menu a:hover, a:active {
+        color: var(--theme-foregr-xlight);
+    }
 
 .iotas-page-body {
     min-height: calc(100vh - (80px + 48px));
@@ -57,9 +92,19 @@ body {
     padding: 20px 20px 20px 20px;
 }
 
+.iotas-page-content a, a:visited {
+    color: var(--theme-hyperlink);
+    text-decoration: none;
+}
+
+.iotas-page-content a:hover, a:active {
+    color: var(--theme-backgr-dark);
+    text-decoration:underline;
+}
+
 .iotas-page-footer {
-    background-color: #444466;
-    color: #fff;
+    background-color: var(--theme-backgr-dark);
+    color: var(--theme-foregr-xlight);
     padding: 10px 20px 10px 20px;
 }
 
