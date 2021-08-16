@@ -1,6 +1,6 @@
 # IoTAS
 An **I**ntranet **o**perated **T**otal **A**udio **S**olution for airports.
-Also a [Manning liveProject](https://liveproject.manning.com/) titled [Bulding **IoT A**pplications with **S**ignalR](https://www.manning.com/liveproject/building-iot-applications-with-signalr) exercise. 
+Also a [Manning liveProject](https://liveproject.manning.com/) titled [Building **IoT A**pplications with **S**ignalR](https://www.manning.com/liveproject/building-iot-applications-with-signalr) exercise. 
 ## Functional Objectives
 The ultimate goal of this project is to build an IoT type solution that distributes audi recordings in real-time to various
 inter/intranet connected smart public address speakers in an airport.
@@ -11,7 +11,7 @@ The liveProject consists of 4 milestones:
 3.	Enabling IoT applications to run as a single cluster
 4.	Enabling IoT application deployment via Docker
 
-Currently this repository is working towards the first milestone.
+Currently this repository is at the first milestone.
 
 ## Technologies
 The solution needs to be build with [.NET 5](https://docs.microsoft.com/en-us/dotnet/core/dotnet-five) and 
