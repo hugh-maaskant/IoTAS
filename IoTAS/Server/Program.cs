@@ -60,6 +60,10 @@ namespace IoTAS.Server
             .ConfigureWebHostDefaults(webBuilder =>
             {
                 webBuilder.UseStartup<Startup>();
+
+                // Uncomment the following line to run on any local IP address, so the
+                // server is accessible from other nodes (subject to firewall rules)
+                // webBuilder.UseUrls("http://0.0.0.0:5000", "https://0.0.0.0:5001");
             });
     }
 }
