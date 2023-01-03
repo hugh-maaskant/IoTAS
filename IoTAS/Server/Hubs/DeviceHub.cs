@@ -5,31 +5,29 @@
 
 using System;
 using System.Threading.Tasks;
-
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-
-using IoTAS.Shared.Hubs;
 using IoTAS.Server.InputQueue;
+using IoTAS.Shared.Hubs;
+using Microsoft.AspNetCore.SignalR;
+
+using Serilog;
 
 namespace IoTAS.Server.Hubs;
 
 public class DeviceHub : Hub<IDeviceHub>, IDeviceHubServer
 {
-    private readonly ILogger<DeviceHub> logger;
+    private readonly ILogger _logger;
 
-    private readonly IHubsInputQueueService queueService;
+    private readonly IHubsInputQueueService _queueService;
 
-    public DeviceHub(ILogger<DeviceHub> logger, IHubsInputQueueService queueService)
+    public DeviceHub(IHubsInputQueueService queueService)
     {
-        this.logger = logger ?? NullLogger<DeviceHub>.Instance;
-        this.queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
+        _logger = Log.ForContext<DeviceHub>();
+        _queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
     }
 
     public override async Task OnConnectedAsync()
     {
-        logger.LogInformation(
+        _logger.Information(
             nameof(OnConnectedAsync) + " - " +
             "Device connected on ConnectionId {ConnectionId}", 
             Context.ConnectionId);
@@ -41,14 +39,14 @@ public class DeviceHub : Hub<IDeviceHub>, IDeviceHubServer
     {
         if (exception == null)
         {
-            logger.LogWarning(
+            _logger.Warning(
                 nameof(OnDisconnectedAsync) +" - " +
                 "Device on ConnectionId {ConnectionId} disconnected", 
                 Context.ConnectionId);
         }
         else
         {
-            logger.LogError(
+            _logger.Error(
                 exception,
                 nameof(OnDisconnectedAsync) + " - " + 
                 "Device on ConnectionId {ConnectionId} disconnected", 
@@ -59,29 +57,29 @@ public class DeviceHub : Hub<IDeviceHub>, IDeviceHubServer
 
     public Task RegisterDeviceClient(DevToSrvDeviceRegistrationDto dtoIn)
     {
-        logger.LogInformation(
+        _logger.Information(
             nameof(RegisterDeviceClient) + " - " +
             "Device registration received from Device {DeviceId} on ConnectionId {ConnectionId}",
             dtoIn.DeviceId, Context.ConnectionId);
 
         Request request = Request.FromClientCall(Context.ConnectionId, dtoIn);
 
-        queueService.Enqueue(request);
+        _queueService.Enqueue(request);
 
         return Task.CompletedTask;
     }
 
     public Task ReceiveDeviceHeartbeat(DevToSrvDeviceHeartbeatDto dtoIn)
     {
-        logger.LogInformation(
+        _logger.Information(
             nameof(ReceiveDeviceHeartbeat) + " - " +
             "Heartbeat received from DeviceId {DeviceId} on ConnectionId {ConnectionId}", 
             dtoIn.DeviceId, Context.ConnectionId);
 
         Request request = Request.FromClientCall(Context.ConnectionId, dtoIn);
 
-        queueService.Enqueue(request);
+        _queueService.Enqueue(request);
 
-        return Task.CompletedTask; ;
+        return Task.CompletedTask;
     }        
 }

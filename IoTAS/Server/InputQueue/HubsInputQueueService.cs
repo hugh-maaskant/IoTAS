@@ -8,8 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+using Serilog;
 
 namespace IoTAS.Server.InputQueue;
 
@@ -21,57 +20,57 @@ namespace IoTAS.Server.InputQueue;
 /// </remarks>
 public sealed class HubsInputQueueService : IHubsInputQueueService
 {
-    private readonly object lockObj = new();
+    private readonly object _lockObj = new();
 
-    private readonly SemaphoreSlim proceedSem = new(0);
+    private readonly SemaphoreSlim _proceedSem = new(0);
 
-    private readonly Queue<Request> requestsQueue = new();
+    private readonly Queue<Request> _requestsQueue = new();
 
-    private int maxItemsQueued = 0;
-    private int maxItemsLogged = 0;
+    private int _maxItemsQueued;
+    private int _maxItemsLogged;
 
-    private readonly ILogger<HubsInputQueueService> logger;
+    private readonly ILogger _logger;
 
-    public HubsInputQueueService(ILogger<HubsInputQueueService> logger)
+    public HubsInputQueueService()
     {
-        this.logger = logger ?? NullLogger< HubsInputQueueService>.Instance;
+        _logger = Log.ForContext<HubsInputQueueService>();
 
-        this.logger.LogInformation("Created");
+        _logger.Information("Created");
     }
 
     /// <summary>
-    /// Threadsafely Enqueue a Request and allow dequeueing
+    /// Thread-safely Enqueue a Request and allow dequeuing
     /// </summary>
     /// <param name="request">The Request to enqueue</param>
     public void Enqueue(Request request)
     {
-        logger.LogDebug(
+        _logger.Debug(
             nameof(Enqueue) + " - " +
-            "Enqueueing {Request}", 
+            "Dequeuing {Request}", 
             request);
 
         // needed to avoid race condition in reporting ...
         int maxItemsToLog;
 
-        lock (lockObj)
+        lock (_lockObj)
         {
-            requestsQueue.Enqueue(request);
+            _requestsQueue.Enqueue(request);
 
-            maxItemsQueued = Math.Max(maxItemsQueued, requestsQueue.Count);
-            maxItemsToLog = maxItemsQueued;
+            _maxItemsQueued = Math.Max(_maxItemsQueued, _requestsQueue.Count);
+            maxItemsToLog = _maxItemsQueued;
         }
 
-        proceedSem.Release();
+        _proceedSem.Release();
 
-        if (maxItemsToLog > maxItemsLogged)
+        if (maxItemsToLog > _maxItemsLogged)
         {
-            logger.LogInformation(
+            _logger.Information(
                 nameof(Enqueue) + " - " +
-                nameof(maxItemsQueued) +
+                nameof(_maxItemsQueued) +
                 " reached: {MaxItemsQueued}",
                 maxItemsToLog);
 
-            maxItemsLogged = maxItemsToLog;
+            _maxItemsLogged = maxItemsToLog;
         }
     }
 
@@ -84,41 +83,39 @@ public sealed class HubsInputQueueService : IHubsInputQueueService
     {
         try
         {
-            await proceedSem.WaitAsync(token);
+            await _proceedSem.WaitAsync(token);
 
-            logger.LogDebug(
+            _logger.Debug(
                 nameof(DequeueAsync) + " - " +
                 "Dequeueing");
 
-            lock (lockObj)
+            lock (_lockObj)
             {
-                Request request = requestsQueue.Dequeue();
+                Request request = _requestsQueue.Dequeue();
                 return request;
             }
         }
         catch (OperationCanceledException e)
         {
-            logger.LogWarning(
-                nameof(DequeueAsync) + " - " +
-                "Wait operation cancelled", e);
+            _logger.Error(
+                e, 
+                nameof(DequeueAsync) + " - " + "Wait operation cancelled");
             throw;
         }
         catch (Exception e)
         {
-            logger.LogError(
+            _logger.Error(
                 e, 
-                nameof(DequeueAsync) + " - " + 
-                "Wait operation exception");
+                nameof(DequeueAsync) + " - " + "Wait operation exception");
             throw;
         }
     }
 
     public void Dispose()
     {
-        proceedSem?.Dispose();
+        _proceedSem?.Dispose();
 
-        logger.LogInformation(
-            nameof(Dispose) + " - " +
-            "Disposed ...");
+        _logger.Information(
+            nameof(Dispose) + " - " + "Disposed ...");
     }
 }

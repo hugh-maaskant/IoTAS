@@ -4,10 +4,8 @@
 //
 
 using System;
-
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
-
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
@@ -17,7 +15,7 @@ namespace IoTAS.Server;
 
 public sealed class Program
 {
-    private static readonly string consoleLogFormat =
+    private static readonly string ConsoleLogFormat =
         "[{@t:HH:mm:ss} {@l:u3}] " +
         "{#if SourceContext is not null}" + 
         " {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1), 30} : " +
@@ -33,7 +31,7 @@ public sealed class Program
             .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
             .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
             .Enrich.FromLogContext()
-            .WriteTo.Console(new ExpressionTemplate(consoleLogFormat, theme: TemplateTheme.Code))
+            .WriteTo.Console(new ExpressionTemplate(ConsoleLogFormat, theme: TemplateTheme.Code))
             .CreateLogger();
 
         try

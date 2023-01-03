@@ -19,7 +19,7 @@ public interface IDeviceHubServer
     /// <summary>
     /// The local path to the DeviceHub on the IoTAS Server 
     /// </summary>
-    public const string path = "/device-hub";
+    public const string Path = "/device-hub";
 
     /// <summary>
     /// Register a Device in the Server.

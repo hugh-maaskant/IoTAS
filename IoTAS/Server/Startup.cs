@@ -3,17 +3,16 @@
 // MIT License
 //
 
+using IoTAS.Server.Hubs;
+using IoTAS.Server.InputQueue;
+using IoTAS.Shared.DevicesStatusStore;
+using IoTAS.Shared.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-
 using Serilog;
-
-using IoTAS.Shared.DevicesStatusStore;
-using IoTAS.Shared.Hubs;
-using IoTAS.Server.InputQueue;
 
 namespace IoTAS.Server;
 
@@ -71,8 +70,8 @@ public sealed class Startup
         {
             endpoints.MapRazorPages();
             // endpoints.MapControllers();
-            endpoints.MapHub<Hubs.DeviceHub>(IDeviceHubServer.path);
-            endpoints.MapHub<Hubs.MonitorHub>(IMonitorHubServer.path);
+            endpoints.MapHub<DeviceHub>(IDeviceHubServer.Path);
+            endpoints.MapHub<MonitorHub>(IMonitorHubServer.Path);
             endpoints.MapFallbackToFile("index.html");
         });
     }

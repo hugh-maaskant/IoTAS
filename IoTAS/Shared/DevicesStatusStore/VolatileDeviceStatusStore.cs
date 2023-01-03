@@ -23,7 +23,7 @@ public sealed class VolatileDeviceStatusStore : IDeviceStatusStore
         _store = new Dictionary<int, DeviceReportingStatus>();
 
         _logger = Log.ForContext<VolatileDeviceStatusStore>();
-        _logger!.Information("Store created");
+        _logger.Information("Store created");
     }
 
     public int Count { get => _store.Count; }

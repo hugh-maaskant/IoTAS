@@ -5,14 +5,11 @@
 
 using System;
 using System.Threading.Tasks;
-
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-
-
-using IoTAS.Shared.Hubs;
 using IoTAS.Server.InputQueue;
+using IoTAS.Shared.Hubs;
+using Microsoft.AspNetCore.SignalR;
+
+using Serilog;
 
 namespace IoTAS.Server.Hubs;
 
@@ -21,19 +18,19 @@ namespace IoTAS.Server.Hubs;
 /// </summary>
 public class MonitorHub : Hub<IMonitorHub>, IMonitorHubServer
 {
-    private readonly ILogger<IMonitorHub> logger;
+    private readonly ILogger _logger;
 
-    private readonly IHubsInputQueueService queueService;
+    private readonly IHubsInputQueueService _queueService;
 
-    public MonitorHub(ILogger<IMonitorHub> logger, IHubsInputQueueService queueService)
+    public MonitorHub(IHubsInputQueueService queueService)
     {
-        this.logger = logger ?? NullLogger<IMonitorHub>.Instance;
-        this.queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
+        _logger = Log.ForContext<MonitorHub>();
+        _queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
     }
 
     public override async Task OnConnectedAsync()
     {
-        logger.LogInformation(
+        _logger.Information(
             nameof(OnConnectedAsync) + " - " +
             "Monitor connected on ConnectionId {ConnectionId}",
             Context.ConnectionId);
@@ -46,14 +43,14 @@ public class MonitorHub : Hub<IMonitorHub>, IMonitorHubServer
         if (e == null)
         {
             // It's OK for Monitors to go away from their web-page
-            logger.LogInformation(
+            _logger.Information(
                 nameof(OnDisconnectedAsync) + " - " +
                 "Monitor on ConnectionId {ConnectionId} disconnected", 
                 Context.ConnectionId);
         }
         else
         {
-            logger.LogError(
+            _logger.Error(
                 e,
                 nameof(OnDisconnectedAsync) + " - " +
                 "Monitor on ConnectionId {ConnectionId} disconnected with exception", 
@@ -67,14 +64,14 @@ public class MonitorHub : Hub<IMonitorHub>, IMonitorHubServer
     //
     public Task RegisterMonitorClient(MonToSrvRegistrationDto monitorRegistrationDto)
     {
-        logger.LogInformation(
+        _logger.Information(
             nameof(RegisterMonitorClient) + " - " +
             "Monitor registration received on ConnectionId {ConnectionId}",
             Context.ConnectionId);
 
         Request request = Request.FromClientCall(Context.ConnectionId, monitorRegistrationDto);
 
-        queueService.Enqueue(request);
+        _queueService.Enqueue(request);
 
         return Task.CompletedTask;
     }

@@ -5,7 +5,6 @@
 
 using System;
 using System.Text;
-
 using IoTAS.Shared.Hubs;
 
 namespace IoTAS.Shared.DevicesStatusStore;
@@ -29,7 +28,7 @@ public sealed record DeviceReportingStatus
     DateTime LastSeenAt
 )
 {
-    private static readonly string dateTimeFormat = "yyyy-MM-dd HH:mm:ss";
+    private static readonly string DateTimeFormat = "yyyy-MM-dd HH:mm:ss";
 
     public SrvToMonDeviceStatusDto ToStatusDto()
     {
@@ -68,15 +67,15 @@ public sealed record DeviceReportingStatus
         sb.Append(", ");
         sb.Append(nameof(FirstRegisteredAt));
         sb.Append(" = ");
-        sb.Append(FirstRegisteredAt.ToString(dateTimeFormat));
+        sb.Append(FirstRegisteredAt.ToString(DateTimeFormat));
         sb.Append(", ");
         sb.Append(nameof(LastRegisteredAt));
         sb.Append(" = ");
-        sb.Append(LastRegisteredAt.ToString(dateTimeFormat));
+        sb.Append(LastRegisteredAt.ToString(DateTimeFormat));
         sb.Append(", ");
         sb.Append(nameof(LastSeenAt));
         sb.Append(" = ");
-        sb.Append(LastSeenAt.ToString(dateTimeFormat));
+        sb.Append(LastSeenAt.ToString(DateTimeFormat));
         sb.Append(" } ");
 
         return sb.ToString();

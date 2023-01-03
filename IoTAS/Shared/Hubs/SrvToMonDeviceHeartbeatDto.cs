@@ -18,7 +18,7 @@ public sealed record SrvToMonDeviceHeartbeatDto
 )
 
 {
-    private static readonly string dateTimeFormat = "yyyy-MM-dd HH:mm:ss";
+    private static readonly string DateTimeFormat = "yyyy-MM-dd HH:mm:ss";
 
     public override string ToString()
     {
@@ -32,7 +32,7 @@ public sealed record SrvToMonDeviceHeartbeatDto
         sb.Append(", ");
         sb.Append(nameof(ReceivedAt));
         sb.Append(" = ");
-        sb.Append(ReceivedAt.ToString(dateTimeFormat));
+        sb.Append(ReceivedAt.ToString(DateTimeFormat));
         sb.Append(" }");
 
         return sb.ToString();

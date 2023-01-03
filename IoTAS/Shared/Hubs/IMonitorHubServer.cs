@@ -20,7 +20,7 @@ public interface IMonitorHubServer
     /// <summary>
     /// The local path to the MonitorHub on the IoTAS Server 
     /// </summary>
-    public const string path = "/monitor-hub";
+    public const string Path = "/monitor-hub";
 
     /// <summary>
     /// Register a Monitor Client in the Server

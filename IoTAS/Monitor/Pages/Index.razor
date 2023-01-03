@@ -5,13 +5,11 @@
 
 @page "/"
 
-@using System.Threading;
-
+@using System.Threading
 @using IoTAS.Shared.DevicesStatusStore
 @using Serilog
-
 @implements IAsyncDisposable
-<div class="clock">@updatedAt.ToString(dateTimeFormat)</div>
+<div class="clock">@_updatedAt.ToString(DateTimeFormat)</div>
 
 <div class="header">Device Status List</div>
 
@@ -23,9 +21,9 @@ else
 {
     string cssColor;
 
-    ontimeCount = 0;
-    lateCount = 0;
-    overdueCount = 0;
+    _onTimeCount = 0;
+    _lateCount = 0;
+    _overdueCount = 0;
 
     <table>
         <thead>
@@ -39,67 +37,67 @@ else
         <tbody>
             @foreach (var deviceStatus in DeviceStatusList)
             {
-                TimeSpan howLongAgo = updatedAt - deviceStatus.LastSeenAt;
+                TimeSpan howLongAgo = _updatedAt - deviceStatus.LastSeenAt;
                 int secondsAgo = (int)Math.Round(howLongAgo.TotalSeconds);
                 switch (secondsAgo)
                 {
                     case <= 15:
                         cssColor = "ontime";
-                        ontimeCount++;
+                        _onTimeCount++;
                         break;
 
                     case <= 30:
                         cssColor = "late";
-                        lateCount++;
+                        _lateCount++;
                         break;
 
                     default:
                         cssColor = "overdue";
-                        overdueCount++;
+                        _overdueCount++;
                         break;
                 }
                 <tr>
                     <td style="text-align:right;">@deviceStatus.DeviceId</td>
-                    <td>@deviceStatus.FirstRegisteredAt.ToString(dateTimeFormat)</td>
-                    <td>@deviceStatus.LastRegisteredAt.ToString(dateTimeFormat)</td>
-                    <td class=@cssColor>@deviceStatus.LastSeenAt.ToString(dateTimeFormat)</td>
+                    <td>@deviceStatus.FirstRegisteredAt.ToString(DateTimeFormat)</td>
+                    <td>@deviceStatus.LastRegisteredAt.ToString(DateTimeFormat)</td>
+                    <td class=@cssColor>@deviceStatus.LastSeenAt.ToString(DateTimeFormat)</td>
                 </tr>
             }
         </tbody>
     </table>
 
     <p class="summary">
-        @if (ontimeCount > 0)
-        {<span>On time: <span class="ontime">@ontimeCount</span>; </span>}
-        @if (lateCount > 0)
-        {<span>Late: <span class="late">@lateCount</span>; </span>}
-        @if (overdueCount > 0)
-        {<span>Overdue: <span class="overdue">@overdueCount</span>;</span>}
+        @if (_onTimeCount > 0)
+        {<span>On time: <span class="ontime">@_onTimeCount</span>; </span>}
+        @if (_lateCount > 0)
+        {<span>Late: <span class="late">@_lateCount</span>; </span>}
+        @if (_overdueCount > 0)
+        {<span>Overdue: <span class="overdue">@_overdueCount</span>;</span>}
     </p>
 }
 
 @code {
 
-    private static readonly string dateTimeFormat = "yyyy-MM-dd  HH:mm:ss";
+    private static readonly string DateTimeFormat = "yyyy-MM-dd  HH:mm:ss";
 
-    private Timer timer;
+    private Timer _timer;
 
-    private DateTime updatedAt;
+    private DateTime _updatedAt;
 
-    private int ontimeCount;
-    private int lateCount = 0;
-    private int overdueCount = 0;
+    private int _onTimeCount;
+    private int _lateCount;
+    private int _overdueCount;
 
     [CascadingParameter(Name = "CascadingDeviceStatusList")]
     public IEnumerable<DeviceReportingStatus> DeviceStatusList { get; set; }
 
     protected override void OnInitialized()
     {
-        updatedAt = DateTime.Now;
+        _updatedAt = DateTime.Now;
 
-        timer = new Timer(async _ =>
+        _timer = new Timer(async _ =>
         {
-            updatedAt = DateTime.Now;
+            _updatedAt = DateTime.Now;
             await InvokeAsync(StateHasChanged);
         }, null, 1000, 1000);
 
@@ -108,9 +106,9 @@ else
 
     public async ValueTask DisposeAsync()
     {
-        if (timer is not null)
+        if (_timer is not null)
         {
-            await timer.DisposeAsync();
+            await _timer.DisposeAsync();
         }
     }
 }

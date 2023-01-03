@@ -23,7 +23,7 @@ public sealed record SrvToMonDeviceStatusDto
     DateTime LastSeenAt         // The most recently seen registration or heartbeat DateTime 
 )
 {
-    private static readonly string dateTimeFormat = "yyyy-MM-dd HH:mm:ss";
+    private static readonly string DateTimeFormat = "yyyy-MM-dd HH:mm:ss";
 
     public override string ToString()
     {
@@ -37,15 +37,15 @@ public sealed record SrvToMonDeviceStatusDto
         sb.Append(", ");
         sb.Append(nameof(FirstRegisteredAt));
         sb.Append(" = ");
-        sb.Append(FirstRegisteredAt.ToString(dateTimeFormat));
+        sb.Append(FirstRegisteredAt.ToString(DateTimeFormat));
         sb.Append(", ");
         sb.Append(nameof(LastRegisteredAt));
         sb.Append(" = ");
-        sb.Append(LastRegisteredAt.ToString(dateTimeFormat));
+        sb.Append(LastRegisteredAt.ToString(DateTimeFormat));
         sb.Append(", ");
         sb.Append(nameof(LastSeenAt));
         sb.Append(" = ");
-        sb.Append(LastSeenAt.ToString(dateTimeFormat));
+        sb.Append(LastSeenAt.ToString(DateTimeFormat));
         sb.Append(" } ");
 
         return sb.ToString();

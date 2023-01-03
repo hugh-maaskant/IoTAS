@@ -3,14 +3,12 @@
 // MIT License
 -->
 
-@using Microsoft.AspNetCore.SignalR.Client;
-
-@using IoTAS.Shared.DevicesStatusStore;
-@using IoTAS.Shared.Hubs;
-@using Serilog
-
 @inject NavigationManager NavigationManager
 
+@using Microsoft.AspNetCore.SignalR.Client
+@using Serilog
+@using IoTAS.Shared.DevicesStatusStore
+@using IoTAS.Shared.Hubs
 @implements IAsyncDisposable
 
 <Router AppAssembly="@typeof(Program).Assembly" PreferExactMatches="@true">
@@ -53,7 +51,7 @@
         _deviceStatusList = _store.GetDevicesStatusList();
         _connectionStatusText = "Initializing";
 
-        _hubPath = NavigationManager.ToAbsoluteUri(IMonitorHubServer.path);
+        _hubPath = NavigationManager.ToAbsoluteUri(IMonitorHubServer.Path);
 
         _logger.Information(
             nameof(OnInitialized) + " - " +
@@ -96,13 +94,13 @@
             if (!operational)
             {
                 // We should never come here, but as a defense-in-depth measure it's fine imho
-                _connectionStatusText = $"Failed to connect to and register on Hub at {_hubPath.ToString()}";
+                _connectionStatusText = $"Failed to connect to and register on Hub at {_hubPath}";
                 StateHasChanged();
 
                 _logger.Fatal(
                     nameof(OnAfterRenderAsync) + " - " +
                     _connectionStatusText);
-            };
+            }
         }
     }
 
@@ -155,7 +153,7 @@
 
         try
         {
-            message = $"Trying to connect to Hub at {_hubPath.ToString()}...";
+            message = $"Trying to connect to Hub at {_hubPath}...";
             SetStatusText(message);
             _logger.Information(
                 nameof(TryToStartConnectionAsync) + " - " +
@@ -163,7 +161,7 @@
 
             await _hubConnection.StartAsync();
 
-            message = $"Connected to Hub at {_hubPath.ToString()}";
+            message = $"Connected to Hub at {_hubPath}";
             SetStatusText(message);
             _logger.Information(
                 nameof(TryToStartConnectionAsync) + " - " +
@@ -205,7 +203,7 @@
             _logger.Warning(
                 e,
                 nameof(TryToRegisterMonitoreAsync) + " - " +
-                $"Error while registering Monitor with the Hub");
+                "Error while registering Monitor with the Hub");
         }
 
         return false;
@@ -221,7 +219,7 @@
 
         if (e is null)
         {
-            message = $"Connection to Hub at {_hubPath.ToString()} closed by Server";
+            message = $"Connection to Hub at {_hubPath} closed by Server";
             SetStatusText(message);
             _logger.Warning(
                 nameof(ConnectionClosedHandler) + " - " +
@@ -232,15 +230,13 @@
             return;
         }
 
-        SetStatusText($"Error {e.Message} on Connection to Hub at {_hubPath.ToString()}");
+        SetStatusText($"Error {e.Message} on Connection to Hub at {_hubPath}");
         _logger.Warning(
             e,
             nameof(ConnectionClosedHandler) + " - " +
             "Connection to Server has been lost");
 
         _ = await StartConnectionAndRegisterAsync();
-
-        return;
     }
 
     private Task ConnectionReconnectedHandler(string connectionId)

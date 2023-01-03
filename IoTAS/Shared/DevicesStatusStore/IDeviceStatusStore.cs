@@ -39,13 +39,13 @@ public interface IDeviceStatusStore
     /// <summary>
     /// Get the current DeviceReportingStatus for all the Devices
     /// </summary>
-    /// <returns>An IEnumerable<DeviceReportingStatus> over a copy (snapshot) of the current Devices statusses</returns>
+    /// <returns>An IEnumerable{DeviceReportingStatus} over a copy (snapshot) of the current Devices statusses</returns>
     public IEnumerable<DeviceReportingStatus> GetDevicesStatusList();
 
     /// <summary>
     /// Insert or update the <see cref="DeviceReportingStatus"/> in the store
     /// </summary>
-    /// <param name="">The DeviceReportingStatus to store</param>
+    /// <param name="status">The DeviceReportingStatus to store</param>
     public void SetDeviceStatus(DeviceReportingStatus status);
 
     /// <summary>

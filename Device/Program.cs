@@ -2,61 +2,52 @@
 // Copyright (c) 2021 Hugh Maaskant
 // MIT License
 //
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Microsoft.AspNetCore.SignalR.Client;
-
 using IoTAS.Shared.Hubs;
+using Microsoft.AspNetCore.SignalR.Client;
 
 namespace IoTAS.Device;
 
 public sealed class Program
 {
     // Hardcoded for now, possibly get from configuration lateron
-    private static readonly string hubUrlHttps = "https://localhost:5001" + IDeviceHubServer.path;
+    private static readonly string HubUrlHttps = "https://localhost:5001" + IDeviceHubServer.Path;
     // private static readonly string hubUrlHttps = "https://localhost:44388" + IDeviceHubServer.path;
     // private static readonly string hubUrlHttp  = "http://localhost:58939" + IDeviceHubServer.path;
 
     // Must be fields so the event handlers can access them.
-    private static readonly CancellationTokenSource tokenSource = new();
-    private static HubConnection connection;
-    private static int deviceId;
+    private static readonly CancellationTokenSource TokenSource = new();
+    private static HubConnection _connection;
+    private static int _deviceId;
 
     static async Task Main(string[] args)
     {
         Console.WriteLine("Device started");
             
         //  In future this might be passed in as a configuration item or a command argument
-        string hubUrl = hubUrlHttps;
+        string hubUrl = HubUrlHttps;
 
         Console.WriteLine($"Using server at {hubUrl}");
         Console.WriteLine();
 
         //  In future this might be passed in as a configuration item or a command argument
-        deviceId = GetDeviceId();
-        if (deviceId != 0)
+        _deviceId = GetDeviceId();
+        if (_deviceId != 0)
         {
             // Set up CNTRL-C handling to cancel out of blocking async operations
             Console.CancelKeyPress += CntrlcHandler;
 
-            connection = new HubConnectionBuilder()
+            _connection = new HubConnectionBuilder()
                 .WithUrl(hubUrl)
                 .Build();
 
-            if (connection is null)
-            {
-                Console.WriteLine("Fatal error in connection builder");
-                // Allow user time to read the message in the console window before it closes
-                await Task.Delay(5000, tokenSource.Token);
-                Environment.Exit(-1);
-            }
-
             // set connection life-cycle callbacks
-            connection.Closed += ConnectionClosedHandler;
-            connection.Reconnecting += ConnectionReconnectingHandler;
-            connection.Reconnected += ConnectionReconnectedHandler;
+            _connection.Closed += ConnectionClosedHandler;
+            _connection.Reconnecting += ConnectionReconnectingHandler;
+            _connection.Reconnected += ConnectionReconnectedHandler;
 
             bool operational = await StartConnectionAndRegisterAsync();
             if (operational)
@@ -67,7 +58,7 @@ public sealed class Program
             // We only get here after a cancellation on the tokenSource (from CNTRL-C)
             await TeardownConnectionAsync();
 
-            tokenSource.Dispose();
+            TokenSource.Dispose();
         }
 
         Console.WriteLine("Bye ...");
@@ -89,7 +80,7 @@ public sealed class Program
         do
         {
             Console.Write("Please enter this device's DeviceId (or 0 to exit): ");
-            string answer = Console.ReadLine().Trim();
+            string answer = Console.ReadLine()?.Trim() ?? string.Empty;
 
             bool valid = int.TryParse(answer, out deviceId);
             if (!valid || deviceId < 0)
@@ -117,7 +108,7 @@ public sealed class Program
             // Remove ourselves ...
             Console.CancelKeyPress -= CntrlcHandler;
 
-            tokenSource.Cancel();
+            TokenSource.Cancel();
 
             // continue running to clean up
             eventArgs.Cancel = true;
@@ -148,7 +139,7 @@ public sealed class Program
         bool registered = false;
 
         // Keep trying until we can start and register or the token source is canceled.
-        while (!tokenSource.IsCancellationRequested && !registered)
+        while (!TokenSource.IsCancellationRequested && !registered)
         {
             if (!started)
             {
@@ -161,7 +152,7 @@ public sealed class Program
             }
 
             if (registered) return true;
-            if (tokenSource.IsCancellationRequested) return false;
+            if (TokenSource.IsCancellationRequested) return false;
 
             // Either Start or Registration failed, backoff and try again ...
             random ??= new Random();
@@ -171,7 +162,7 @@ public sealed class Program
             Console.WriteLine($"Retrying in {delay} msec");
             try
             {
-                await Task.Delay(delay, tokenSource.Token);
+                await Task.Delay(delay, TokenSource.Token);
             }
             catch (TaskCanceledException)
             {
@@ -188,7 +179,7 @@ public sealed class Program
         try
         {
             Console.WriteLine("Trying to start the connection ...");
-            await connection.StartAsync(tokenSource.Token);
+            await _connection.StartAsync(TokenSource.Token);
             Console.WriteLine("Connection has been started");
 
             return true;
@@ -208,7 +199,7 @@ public sealed class Program
     // Called by SignalR runtime on cancellation, error or keep-alive time-out
     private static async Task ConnectionClosedHandler(Exception e)
     {
-        if (tokenSource.IsCancellationRequested)
+        if (TokenSource.IsCancellationRequested)
         {
             Console.WriteLine("Connection to server closed due to cancellation - exiting");
             return;
@@ -246,27 +237,27 @@ public sealed class Program
     /// <returns>A Task</returns>
     private static async Task TeardownConnectionAsync()
     {
-        Console.WriteLine($"Tearing down connection ...");
-        if (connection is null) return;
+        Console.WriteLine("Tearing down connection ...");
+        if (_connection is null) return;
 
-        Console.WriteLine($"Removing life-cycle event handlers ...");
-        connection.Closed -= ConnectionClosedHandler;
-        connection.Reconnecting -= ConnectionReconnectingHandler;
-        connection.Reconnected -= ConnectionReconnectedHandler;
+        Console.WriteLine("Removing life-cycle event handlers ...");
+        _connection.Closed -= ConnectionClosedHandler;
+        _connection.Reconnecting -= ConnectionReconnectingHandler;
+        _connection.Reconnected -= ConnectionReconnectedHandler;
 
-        if (connection.State == HubConnectionState.Connected)
+        if (_connection.State == HubConnectionState.Connected)
         {
-            Console.WriteLine($"Stopping the connection ...");
-            await connection.StopAsync();
-            Console.WriteLine($"Connection has been stopped by Device");
+            Console.WriteLine("Stopping the connection ...");
+            await _connection.StopAsync();
+            Console.WriteLine("Connection has been stopped by Device");
         }
         else
         {
-            Console.WriteLine($"Connection was not connected, no need to stop it.");
+            Console.WriteLine("Connection was not connected, no need to stop it.");
         }
 
-        await connection.DisposeAsync();
-        Console.WriteLine($"Connection has been disposed");
+        await _connection.DisposeAsync();
+        Console.WriteLine("Connection has been disposed");
     }
 
     # endregion HubConnection Management
@@ -281,9 +272,9 @@ public sealed class Program
     {
         try
         {
-            var dto = new DevToSrvDeviceRegistrationDto(deviceId);
-            Console.WriteLine($"Registering Device with Id {deviceId} ...");
-            await connection.InvokeAsync(nameof(IDeviceHubServer.RegisterDeviceClient), dto, tokenSource.Token);
+            var dto = new DevToSrvDeviceRegistrationDto(_deviceId);
+            Console.WriteLine($"Registering Device with Id {_deviceId} ...");
+            await _connection.InvokeAsync(nameof(IDeviceHubServer.RegisterDeviceClient), dto, TokenSource.Token);
             Console.WriteLine("Registration succesful");
             return true;
         }
@@ -309,17 +300,17 @@ public sealed class Program
     private static async Task DoHeartbeatAsync()
     {
         Console.WriteLine($"{nameof(DoHeartbeatAsync)} Task started");
-        var dto = new DevToSrvDeviceHeartbeatDto(deviceId);
+        var dto = new DevToSrvDeviceHeartbeatDto(_deviceId);
         int heartbeatNumber = 0;
 
-        while (!tokenSource.IsCancellationRequested)
+        while (!TokenSource.IsCancellationRequested)
         {
             heartbeatNumber++;
 
             // Delay 15 seconds; in case of cancellation: end the Task
             try
             {
-                await Task.Delay(15 * 1000, tokenSource.Token);
+                await Task.Delay(15 * 1000, TokenSource.Token);
             }
             catch (TaskCanceledException)
             {
@@ -327,12 +318,12 @@ public sealed class Program
                 return;
             }
 
-            if (connection.State == HubConnectionState.Connected)
+            if (_connection.State == HubConnectionState.Connected)
             {
                 // Send the heartbeat; in case of cancellation: end the Task
                 try
                 {
-                    await connection.InvokeAsync(nameof(IDeviceHubServer.ReceiveDeviceHeartbeat), dto, tokenSource.Token);
+                    await _connection.InvokeAsync(nameof(IDeviceHubServer.ReceiveDeviceHeartbeat), dto, TokenSource.Token);
                     Console.WriteLine($"{nameof(DoHeartbeatAsync)} {heartbeatNumber} succeded");
                 }
                 catch (TaskCanceledException)
