@@ -7,13 +7,10 @@
 
 @using System.Threading;
 
-@using Microsoft.Extensions.Logging;
-
 @using IoTAS.Shared.DevicesStatusStore
+@using Serilog
 
 @implements IAsyncDisposable
-
-@inject ILogger<Index> Logger
 <div class="clock">@updatedAt.ToString(dateTimeFormat)</div>
 
 <div class="header">Device Status List</div>
@@ -100,13 +97,13 @@ else
     {
         updatedAt = DateTime.Now;
 
-        timer = new System.Threading.Timer(async _ =>
+        timer = new Timer(async _ =>
         {
             updatedAt = DateTime.Now;
             await InvokeAsync(StateHasChanged);
         }, null, 1000, 1000);
 
-        Logger.LogInformation($"{nameof(Index)} initialised ...");
+        Log.Information($"{nameof(Index)} initialized ...");
     }
 
     public async ValueTask DisposeAsync()

@@ -15,66 +15,65 @@ using IoTAS.Shared.DevicesStatusStore;
 using IoTAS.Shared.Hubs;
 using IoTAS.Server.InputQueue;
 
-namespace IoTAS.Server
+namespace IoTAS.Server;
+
+public sealed class Startup
 {
-    public sealed class Startup
+    public Startup(IConfiguration configuration)
     {
-        public Startup(IConfiguration configuration)
+        Configuration = configuration;
+    }
+
+    public IConfiguration Configuration { get; }
+
+    // This method gets called by the runtime. Use this method to add services to the container.
+    // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
+    public void ConfigureServices(IServiceCollection services)
+    {
+        Log.Information(nameof(Startup) + ": " + nameof(ConfigureServices));
+        // services.AddControllersWithViews();
+        services.AddRazorPages();
+        services.AddSignalR();
+
+        services.AddSingleton<IHubsInputQueueService, HubsInputQueueService>();
+        services.AddSingleton<IDeviceStatusStore, VolatileDeviceStatusStore>();
+
+        services.AddHostedService<InputProcessorHostedService>();
+    }
+
+    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        Log.Information(nameof(Startup) + ": " + nameof(Configure));
+        if (env.IsDevelopment())
         {
-            Configuration = configuration;
+            app.UseDeveloperExceptionPage();
+            app.UseWebAssemblyDebugging();
+        }
+        else
+        {
+            app.UseExceptionHandler("/Error");
+            // The default HSTS value is 30 days.
+            // You may want to change this for production scenarios,
+            // see https://aka.ms/aspnetcore-hsts.
+            app.UseHsts();
         }
 
-        public IConfiguration Configuration { get; }
+        app.UseHttpsRedirection();
+        app.UseBlazorFrameworkFiles();
+        app.UseStaticFiles();
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
-        public void ConfigureServices(IServiceCollection services)
+        app.UseSerilogRequestLogging();
+
+        app.UseRouting();
+
+        app.UseEndpoints(endpoints =>
         {
-            Log.Information(nameof(Startup) + ": " + nameof(ConfigureServices));
-            // services.AddControllersWithViews();
-            services.AddRazorPages();
-            services.AddSignalR();
-
-            services.AddSingleton<IHubsInputQueueService, HubsInputQueueService>();
-            services.AddSingleton<IDeviceStatusStore, VolatileDeviceStatusStore>();
-
-            services.AddHostedService<InputProcessorHostedService>();
-        }
-
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            Log.Information(nameof(Startup) + ": " + nameof(Configure));
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-                app.UseWebAssemblyDebugging();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days.
-                // You may want to change this for production scenarios,
-                // see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
-
-            app.UseHttpsRedirection();
-            app.UseBlazorFrameworkFiles();
-            app.UseStaticFiles();
-
-            app.UseSerilogRequestLogging();
-
-            app.UseRouting();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapRazorPages();
-                // endpoints.MapControllers();
-                endpoints.MapHub<Hubs.DeviceHub>(IDeviceHubServer.path);
-                endpoints.MapHub<Hubs.MonitorHub>(IMonitorHubServer.path);
-                endpoints.MapFallbackToFile("index.html");
-            });
-        }
+            endpoints.MapRazorPages();
+            // endpoints.MapControllers();
+            endpoints.MapHub<Hubs.DeviceHub>(IDeviceHubServer.path);
+            endpoints.MapHub<Hubs.MonitorHub>(IMonitorHubServer.path);
+            endpoints.MapFallbackToFile("index.html");
+        });
     }
 }

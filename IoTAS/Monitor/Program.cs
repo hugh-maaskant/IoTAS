@@ -3,14 +3,13 @@
 // MIT License
 //
 using System;
-using System.Net.Http;
+using System.Globalization;
 using System.Threading.Tasks;
-
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.Extensions.Configuration;
-
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.JSInterop;
 using Serilog;
+using Serilog.Events;
 
 namespace IoTAS.Monitor
 {
@@ -18,21 +17,32 @@ namespace IoTAS.Monitor
     {
         public static async Task Main(string[] args)
         {
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.BrowserConsole()
-                .CreateLogger();
-            Log.Information("Monitor started ...");
-
             try
             {
                 var builder = WebAssemblyHostBuilder.CreateDefault(args);
-                Log.Information($"Base address is {builder.HostEnvironment.BaseAddress}");
+                
 
                 builder.RootComponents.Add<App>("#app");
                 // builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
-                await builder.Build().RunAsync();
+                var host = builder.Build();
+
+                // Must pass the IJSRuntime to Serilog to avoid exception
+                // See https://github.com/dotnet/aspnetcore/issues/45536 
+
+                Log.Logger = new LoggerConfiguration()
+                    .MinimumLevel.Debug()
+                    .WriteTo.BrowserConsole(
+                        restrictedToMinimumLevel: LogEventLevel.Debug,
+                        outputTemplate: "{Level:u3} - {Message:lj}{NewLine}{Exception}",
+                        CultureInfo.InvariantCulture,
+                        null,
+                        host.Services.GetRequiredService<IJSRuntime>())
+                    .CreateLogger();
+                Log.Information("Monitor started ...");
+                Log.Information($"Base address is {builder.HostEnvironment.BaseAddress}");
+
+                await host.RunAsync();
             }
             catch (Exception ex)
             {

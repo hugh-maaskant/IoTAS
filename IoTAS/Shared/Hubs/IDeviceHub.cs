@@ -3,14 +3,13 @@
 // MIT License
 //
 
-namespace IoTAS.Shared.Hubs
+namespace IoTAS.Shared.Hubs;
+
+/// <summary>
+/// Typesafe Hub Interface for the IoTAS Server to signal (call)
+/// the Device Clients
+/// </summary>
+public interface IDeviceHub
 {
-    /// <summary>
-    /// Typesafe Hub Interface for the IoTAS Server to signal (call)
-    /// the Device Clients
-    /// </summary>
-    public interface IDeviceHub
-    {
-        // empty for milestone 1
-    }
+    // empty for milestone 1
 }

@@ -14,69 +14,68 @@ using Microsoft.Extensions.Logging.Abstractions;
 using IoTAS.Shared.Hubs;
 using IoTAS.Server.InputQueue;
 
-namespace IoTAS.Server.Hubs
+namespace IoTAS.Server.Hubs;
+
+/// <summary>
+/// Typesafe SignalR Hub for Monitor Clients
+/// </summary>
+public class MonitorHub : Hub<IMonitorHub>, IMonitorHubServer
 {
-    /// <summary>
-    /// Typesafe SignalR Hub for Monitor Clients
-    /// </summary>
-    public class MonitorHub : Hub<IMonitorHub>, IMonitorHubServer
+    private readonly ILogger<IMonitorHub> logger;
+
+    private readonly IHubsInputQueueService queueService;
+
+    public MonitorHub(ILogger<IMonitorHub> logger, IHubsInputQueueService queueService)
     {
-        private readonly ILogger<IMonitorHub> logger;
+        this.logger = logger ?? NullLogger<IMonitorHub>.Instance;
+        this.queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
+    }
 
-        private readonly IHubsInputQueueService queueService;
+    public override async Task OnConnectedAsync()
+    {
+        logger.LogInformation(
+            nameof(OnConnectedAsync) + " - " +
+            "Monitor connected on ConnectionId {ConnectionId}",
+            Context.ConnectionId);
 
-        public MonitorHub(ILogger<IMonitorHub> logger, IHubsInputQueueService queueService)
+        await base.OnConnectedAsync();
+    }
+
+    public override async Task OnDisconnectedAsync(Exception e)
+    {
+        if (e == null)
         {
-            this.logger = logger ?? NullLogger<IMonitorHub>.Instance;
-            this.queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
-        }
-
-        public override async Task OnConnectedAsync()
-        {
+            // It's OK for Monitors to go away from their web-page
             logger.LogInformation(
-                nameof(OnConnectedAsync) + " - " +
-                "Monitor connected on ConnectionId {ConnectionId}",
+                nameof(OnDisconnectedAsync) + " - " +
+                "Monitor on ConnectionId {ConnectionId} disconnected", 
                 Context.ConnectionId);
-
-            await base.OnConnectedAsync();
         }
-
-        public override async Task OnDisconnectedAsync(Exception e)
+        else
         {
-            if (e == null)
-            {
-                // It's OK for Monitors to go away from their web-page
-                logger.LogInformation(
-                    nameof(OnDisconnectedAsync) + " - " +
-                    "Monitor on ConnectionId {ConnectionId} disconnected", 
-                    Context.ConnectionId);
-            }
-            else
-            {
-                logger.LogError(
-                    e,
-                    nameof(OnDisconnectedAsync) + " - " +
-                    "Monitor on ConnectionId {ConnectionId} disconnected with exception", 
-                    Context.ConnectionId);
-            }
-            await base.OnDisconnectedAsync(e);
-        }
-
-        //
-        // Called by the Hub on behalf of the Monitor Client call ...
-        //
-        public Task RegisterMonitorClient(MonToSrvRegistrationDto monitorRegistrationDto)
-        {
-            logger.LogInformation(
-                nameof(RegisterMonitorClient) + " - " +
-                "Monitor registration received on ConnectionId {ConnectionId}",
+            logger.LogError(
+                e,
+                nameof(OnDisconnectedAsync) + " - " +
+                "Monitor on ConnectionId {ConnectionId} disconnected with exception", 
                 Context.ConnectionId);
-
-            Request request = Request.FromClientCall(Context.ConnectionId, monitorRegistrationDto);
-
-            queueService.Enqueue(request);
-
-            return Task.CompletedTask;
         }
+        await base.OnDisconnectedAsync(e);
+    }
+
+    //
+    // Called by the Hub on behalf of the Monitor Client call ...
+    //
+    public Task RegisterMonitorClient(MonToSrvRegistrationDto monitorRegistrationDto)
+    {
+        logger.LogInformation(
+            nameof(RegisterMonitorClient) + " - " +
+            "Monitor registration received on ConnectionId {ConnectionId}",
+            Context.ConnectionId);
+
+        Request request = Request.FromClientCall(Context.ConnectionId, monitorRegistrationDto);
+
+        queueService.Enqueue(request);
+
+        return Task.CompletedTask;
     }
 }

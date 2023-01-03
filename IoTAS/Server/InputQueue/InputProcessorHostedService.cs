@@ -4,15 +4,14 @@
 //
 
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+
+using Serilog;
 
 using IoTAS.Shared.DevicesStatusStore;
 using IoTAS.Shared.Hubs;
@@ -27,34 +26,34 @@ namespace IoTAS.Server.InputQueue
     /// </summary>
     public sealed class InputProcessorHostedService : BackgroundService
     {
-        private const string registeredMonitorsGroup = "RegisteredMonitors";
+        private const string RegisteredMonitorsGroup = "RegisteredMonitors";
 
-        private readonly ILogger<InputProcessorHostedService> logger;
+        private readonly ILogger _logger;
 
-        private readonly IHubsInputQueueService inputQueue;
+        private readonly IHubsInputQueueService _inputQueue;
 
-        private readonly IDeviceStatusStore store;
+        private readonly IDeviceStatusStore _store;
 
-        private readonly IHubContext<MonitorHub, IMonitorHub> monitorHubContext;
+        private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHubContext;
 
         public InputProcessorHostedService(
-            ILogger<InputProcessorHostedService> logger,
             IHubsInputQueueService inputQueue,
             IDeviceStatusStore store,
             IHubContext<MonitorHub, IMonitorHub> monitorHubContext)
         {
-            this.logger = logger ?? NullLogger<InputProcessorHostedService>.Instance;
-            this.inputQueue = inputQueue ?? throw new ArgumentNullException(nameof(inputQueue));
-            this.store = store ?? throw new ArgumentNullException(nameof(store));
-            this.monitorHubContext = monitorHubContext ?? throw new ArgumentNullException(nameof(monitorHubContext));
+            _logger = Log.ForContext<InputProcessorHostedService>();
             
-            logger.LogDebug("Created");
+            _inputQueue = inputQueue ?? throw new ArgumentNullException(nameof(inputQueue));
+            _store = store ?? throw new ArgumentNullException(nameof(store));
+            _monitorHubContext = monitorHubContext ?? throw new ArgumentNullException(nameof(monitorHubContext));
+            
+            _logger.Debug("Created");
         }
 
         // Called by the ASP.NET infrastructure upon startup ...
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            logger.LogInformation(
+            _logger.Information(
                 nameof(ExecuteAsync) + " - " +
                 "Starting Async execution");
 
@@ -64,13 +63,13 @@ namespace IoTAS.Server.InputQueue
             {
                 try
                 {
-                    logger.LogDebug(
+                    _logger.Debug(
                         nameof(ExecuteAsync) + " - " +
                         "Waiting for request ...");
                     
-                    Request request = await inputQueue.DequeueAsync(stoppingToken);
+                    Request request = await _inputQueue.DequeueAsync(stoppingToken);
                     
-                    logger.LogDebug(
+                    _logger.Debug(
                         nameof(ExecuteAsync) + " - " +
                         "Retrieved {Request}",
                         request);
@@ -79,14 +78,14 @@ namespace IoTAS.Server.InputQueue
                 }
                 catch (OperationCanceledException e)
                 {
-                    logger.LogWarning(
+                    _logger.Warning(
                         e,
                         nameof(ExecuteAsync) + " - " +
                         "Cancellation requested - EXITING");
                 }
                 catch (Exception e)
                 {
-                    logger.LogError(
+                    _logger.Error(
                         e,
                         nameof(ExecuteAsync) + " - " + 
                         "Error dequeueng request - EXITING");
@@ -94,7 +93,7 @@ namespace IoTAS.Server.InputQueue
                 }
             }
 
-            logger.LogWarning(
+            _logger.Warning(
                 nameof(ExecuteAsync) + " - " +
                 $"Execution stopped fatalError = {fatalError}, cancellation rquested = {stoppingToken.IsCancellationRequested}");
         }
@@ -103,14 +102,14 @@ namespace IoTAS.Server.InputQueue
         {
             if (request is null)
             {
-                logger.LogWarning(
+                _logger.Warning(
                     nameof(ProcessRequest) + " - " +
                     "Called with request == null");
                 
                 return;
             }
 
-            logger.LogInformation(
+            _logger.Information(
                 nameof(ProcessRequest) + " - " + 
                 "Dispatching {Request}",
                 request);
@@ -133,7 +132,7 @@ namespace IoTAS.Server.InputQueue
                     break;
 
                 default:
-                    logger.LogError(
+                    _logger.Error(
                         nameof(ProcessRequest) + " - " +
                         "Unknown request.ReceivedDto type : {Request}",
                         request);
@@ -143,24 +142,24 @@ namespace IoTAS.Server.InputQueue
 
         private async Task ProcessDeviceRegistrationAsync(DevToSrvDeviceRegistrationDto dtoIn, DateTime timeStamp)
         {
-            DeviceReportingStatus status = store.UpdateRegistration(dtoIn.DeviceId, timeStamp);
+            DeviceReportingStatus status = _store.UpdateRegistration(dtoIn.DeviceId, timeStamp);
 
             var dtoOut = status.ToStatusDto();
 
             try
             {
-                await monitorHubContext.Clients.Group(registeredMonitorsGroup)
+                await _monitorHubContext.Clients.Group(RegisteredMonitorsGroup)
                     .ReceiveDeviceStatusUpdate(dtoOut);
             }
             catch (Exception e)
             {
-                logger.LogWarning(
+                _logger.Warning(
                     e,
                     nameof(ProcessDeviceRegistrationAsync) + " - " +
                     $"Error in {nameof(IMonitorHub.ReceiveDeviceStatusUpdate)} multicast");
             }
 
-            logger.LogDebug(
+            _logger.Debug(
                 nameof(ProcessDeviceRegistrationAsync) + " - " +
                 "Handled {dtoIn}",
                 dtoIn);
@@ -168,23 +167,23 @@ namespace IoTAS.Server.InputQueue
 
         private async Task ProcessDeviceHeartbeatASync(DevToSrvDeviceHeartbeatDto dtoIn, DateTime timeStamp)
         {
-            DeviceReportingStatus status = store.UpdateHeartbeat(dtoIn.DeviceId, timeStamp);
+            DeviceReportingStatus status = _store.UpdateHeartbeat(dtoIn.DeviceId, timeStamp);
 
             var dtoOut = status.ToHeartbeatDto();
 
             try
             {
-                await monitorHubContext.Clients.Group(registeredMonitorsGroup)
+                await _monitorHubContext.Clients.Group(RegisteredMonitorsGroup)
                     .ReceiveDeviceHeartbeatUpdate(dtoOut);
             }
             catch (Exception e)
             {
-                logger.LogWarning(
+                _logger.Warning(
                     e,
                     nameof(ProcessDeviceHeartbeatASync) +
                     $"Error in {nameof(IMonitorHub.ReceiveDeviceHeartbeatUpdate)} multicast");
             }
-            logger.LogDebug(
+            _logger.Debug(
                 nameof(ProcessDeviceHeartbeatASync) + " - " +
                 "Handled {dtoIn}",
                 dtoIn);
@@ -192,7 +191,7 @@ namespace IoTAS.Server.InputQueue
 
         private async Task ProcessMonitorRegistrationAsync(MonToSrvRegistrationDto dtoIn, string connectionId)
         {
-            var dtoOut = store.GetDevicesStatusList()
+            var dtoOut = _store.GetDevicesStatusList()
                 .Select(status => status.ToStatusDto())
                 .ToArray();
 
@@ -200,21 +199,21 @@ namespace IoTAS.Server.InputQueue
             {
                 // Provide the registering Monitor with the current status of all Devices
                 // If the number of devices gets too big, this could conditially be done in chunks
-                await monitorHubContext.Clients.Client(connectionId)
+                await _monitorHubContext.Clients.Client(connectionId)
                     .ReceiveDeviceStatusesSnapshot(dtoOut);
             }
             catch (Exception e)
             {
-                logger.LogWarning(
+                _logger.Warning(
                     e,
                     nameof(ProcessMonitorRegistrationAsync) +
                     $"Error in {nameof(IMonitorHub.ReceiveDeviceStatusesSnapshot)} singlecast");
             }
 
             // Ensure it will get future status updates
-            await monitorHubContext.Groups.AddToGroupAsync(connectionId, registeredMonitorsGroup);
+            await _monitorHubContext.Groups.AddToGroupAsync(connectionId, RegisteredMonitorsGroup);
 
-            logger.LogDebug(
+            _logger.Debug(
                 nameof(ProcessMonitorRegistrationAsync) + " - " +
                 "Handled {dtoIn}",
                 dtoIn);
